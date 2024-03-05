@@ -28,7 +28,7 @@ linux: modtidy
 	@echo "done.\n"
 
 arm64: modtidy
-	@echo "building linux arm64/arm version..."
+	@echo "building linux arm64/aarch64 version..."
 	@GOARCH=arm64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_ARM64} -ldflags=${LDFLAGS} main.go
 	@echo "done.\n"
 

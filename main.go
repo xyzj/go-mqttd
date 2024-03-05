@@ -12,6 +12,7 @@ import (
 	"github.com/xyzj/gopsu/config"
 	"github.com/xyzj/gopsu/gocmd"
 	"github.com/xyzj/gopsu/pathtool"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -20,6 +21,7 @@ var (
 	configfile = pathtool.JoinPathFromHere("go-mqttd.conf")
 	conf       = config.NewConfig("")
 	confile    = flag.String("config", "", "config file path, default is go-mqttd.conf")
+	authfile   = flag.String("auth", "", "auth file path")
 )
 
 func GetServerTLSConfig(certfile, keyfile, clientca string) (*tls.Config, error) {
@@ -62,6 +64,62 @@ func GetServerTLSConfig(certfile, keyfile, clientca string) (*tls.Config, error)
 	}
 	return tc, nil
 }
+
+/*
+	Filters Access :
+
+0-Deny      				// user cannot access the topic
+1-ReadOnly                // user can only subscribe to the topic
+2-WriteOnly               // user can only publish to the topic
+3-ReadWrite               // user can both publish and subscribe to the topic
+*/
+func fromAuthFile() *auth.Ledger {
+	ac := &auth.Ledger{}
+	if *authfile == "" {
+		return ac
+	}
+	b, err := os.ReadFile(*authfile)
+	if err != nil {
+		createAuthFile(*authfile)
+		return ac
+	}
+
+	err = yaml.Unmarshal(b, &ac)
+	if err != nil {
+		createAuthFile(*authfile)
+		return &auth.Ledger{}
+	}
+	return ac
+}
+func createAuthFile(filename string) {
+	b, err := yaml.Marshal(&auth.Ledger{
+		Users: map[string]auth.UserRule{
+			"mqttdevices": {
+				Username: "mqttdevices",
+				Password: "fallguys",
+				ACL: auth.Filters{
+					"down/#": auth.ReadOnly,
+					"up/#":   auth.WriteOnly,
+				}},
+			"lostjudgment": {
+				Username: "lostjudgment",
+				Password: "yagami",
+				ACL: auth.Filters{
+					"deny/#": auth.Deny,
+					"rw/#":   auth.ReadWrite,
+				},
+			},
+		},
+	})
+	if err != nil {
+		println(err.Error())
+		return
+	}
+	err = os.WriteFile(filename, b, 0664)
+	if err != nil {
+		println(err.Error())
+	}
+}
 func main() {
 	svr := mqtt.New(nil)
 	gocmd.DefaultProgram(&gocmd.Info{
@@ -71,28 +129,41 @@ func main() {
 	}).AfterStop(func() {
 		svr.Close()
 	}).Execute()
-	if *confile == "" {
-		*confile = configfile
+
+	if *confile != "" {
+		configfile = *confile
 	}
 	//  读取配置
-	conf.FromFile(*confile)
-
+	conf.FromFile(configfile)
 	lconf := &listeners.Config{}
-	tl, err := GetServerTLSConfig("localhost.pem", "localhost-key.pem", "")
+	tl, err := GetServerTLSConfig(
+		conf.GetDefault(&config.Item{
+			Key:     "cert_file",
+			Value:   "localhost.pem",
+			Comment: "cert file",
+		}).String(),
+		conf.GetDefault(&config.Item{
+			Key:     "key_file",
+			Value:   "localhost-key.pem",
+			Comment: "key file",
+		}).String(),
+		"")
 	if err != nil {
 		println(err.Error())
-		lconf = nil
 	} else {
 		lconf.TLSConfig = tl
 	}
-	// 检查端口
+	// 设置权限
+	au := fromAuthFile()
+	// 追加内置账户
+	au.Auth = append(au.Auth,
+		auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
+		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
+	)
 	svr.AddHook(&auth.Hook{}, &auth.Options{
-		Ledger: &auth.Ledger{
-			Auth: auth.AuthRules{
-				{Username: "arx7", Password: "arbalest", Allow: true},
-				{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
-			},
-		}})
+		Ledger: au,
+	})
+	// mqtt端口
 	tcp := listeners.NewTCP("mqtt-svr", ":"+conf.GetDefault(&config.Item{
 		Key:     "mqtt_port",
 		Value:   "1883",
@@ -103,6 +174,7 @@ func main() {
 		println("MQTTd", ""+err.Error())
 		return
 	}
+	// 监听网络状态
 	web := listeners.NewHTTPStats("web", ":"+conf.GetDefault(&config.Item{
 		Key:     "http_port",
 		Value:   "1880",
@@ -113,11 +185,14 @@ func main() {
 		println("HTTP", ""+err.Error())
 		return
 	}
+	// 启动服务
 	err = svr.Serve()
 	if err != nil {
 		println("MQTTd", ""+err.Error())
 		return
 	}
-	conf.ToFile()
+	if *confile != "" {
+		conf.ToFile()
+	}
 	select {}
 }
