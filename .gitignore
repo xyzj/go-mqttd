@@ -7,6 +7,11 @@
 *.dll
 *.so
 *.dylib
+*.dbupg
+*.pid
+*.ver
+*.log
+__*
 
 # Test binary, built with `go test -c`
 *.test
@@ -16,6 +21,9 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-
+_dist/
+test/
+.vscode/
+docs/
 # Go workspace file
 go.work
