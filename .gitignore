@@ -1,29 +1,85 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.dbupg
-*.pid
-*.ver
-*.log
-__*
-
-# Test binary, built with `go test -c`
+# Golang #
+######################
+# `go test -c` 生成的二进制文件
 *.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
+# go coverage 工具
 *.out
+*.prof
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
-_dist/
-test/
-.vscode/
+# 编译文件 #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# 压缩包 #
+############
+# Git 自带压缩,如果这些压缩包里有代码,建议解压后 commit
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# 日志文件和数据库 #
+######################
+*.log
+*.sqlite
+*.db
+*.conf
+
+# 临时文件 #
+######################
+tmp/
+.tmp/
+
+# 系统生成文件 #
+######################
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.TemporaryItems
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# IDE 和编辑器 #
+######################
+/go_build_*
+out/
+*.sublime*
+.project
+
+# 前端工具链 #
+######################
+.sass-cache/*
+node_modules/
+
+# 公司开发文件
+Jenkinsfile
+conf/
 docs/
-# Go workspace file
+_dist/
+*.dbupg
+*.ver
+*.pid
+__debug*
+.vscode/
+.idea/
+test/
 go.work

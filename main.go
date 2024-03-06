@@ -135,7 +135,6 @@ func main() {
 	}
 	//  读取配置
 	conf.FromFile(configfile)
-	lconf := &listeners.Config{}
 	tl, err := GetServerTLSConfig(
 		conf.GetDefault(&config.Item{
 			Key:     "cert_file",
@@ -143,15 +142,34 @@ func main() {
 			Comment: "cert file",
 		}).String(),
 		conf.GetDefault(&config.Item{
-			Key:     "key_file",
+			Key:     "cert_key",
 			Value:   "localhost-key.pem",
 			Comment: "key file",
 		}).String(),
 		"")
+	var mqtttls string
 	if err != nil {
 		println(err.Error())
 	} else {
-		lconf.TLSConfig = tl
+		mqtttls = ":" + conf.GetDefault(&config.Item{
+			Key:     "port_mqtt_tls",
+			Value:   "1881",
+			Comment: "mqtt服务tls端口",
+		}).String()
+	}
+	mqttport := ":" + conf.GetDefault(&config.Item{
+		Key:     "port_mqtt",
+		Value:   "1883",
+		Comment: "mqtt服务端口",
+	}).String()
+	webport := ":" + conf.GetDefault(&config.Item{
+		Key:     "port_web",
+		Value:   "1880",
+		Comment: "mqtt服务状态查看端口",
+	}).String()
+	// 保存配置
+	if *confile != "" {
+		conf.ToFile()
 	}
 	// 设置权限
 	au := fromAuthFile()
@@ -163,24 +181,24 @@ func main() {
 	svr.AddHook(&auth.Hook{}, &auth.Options{
 		Ledger: au,
 	})
-	// mqtt端口
-	tcp := listeners.NewTCP("mqtt-svr", ":"+conf.GetDefault(&config.Item{
-		Key:     "mqtt_port",
-		Value:   "1883",
-		Comment: "mqtt服务端口",
-	}).String(), lconf)
-	err = svr.AddListener(tcp)
+	// mqtt tls端口
+	if mqtttls != "" {
+		err = svr.AddListener(listeners.NewTCP("mqtt-tls", mqtttls, &listeners.Config{
+			TLSConfig: tl,
+		}))
+		if err != nil {
+			println("MQTTd", ""+err.Error())
+			return
+		}
+	}
+	// // mqtt端口
+	err = svr.AddListener(listeners.NewTCP("mqtt-svr", mqttport, &listeners.Config{}))
 	if err != nil {
 		println("MQTTd", ""+err.Error())
 		return
 	}
 	// 监听网络状态
-	web := listeners.NewHTTPStats("web", ":"+conf.GetDefault(&config.Item{
-		Key:     "http_port",
-		Value:   "1880",
-		Comment: "mqtt服务状态查看端口",
-	}).String(), lconf, svr.Info)
-	err = svr.AddListener(web)
+	err = svr.AddListener(listeners.NewHTTPStats("web", webport, &listeners.Config{}, svr.Info))
 	if err != nil {
 		println("HTTP", ""+err.Error())
 		return
@@ -190,9 +208,6 @@ func main() {
 	if err != nil {
 		println("MQTTd", ""+err.Error())
 		return
-	}
-	if *confile != "" {
-		conf.ToFile()
 	}
 	select {}
 }
