@@ -9,6 +9,11 @@ DIST_MIPS64=_dist/${BINARY_NAME}-mips64
 GO_VER=`go version | cut -d \  -f 3`
 LDFLAGS="-s -w -X 'main.gover=${GO_VER}' -X 'main.cover=${MAIN_VER}'"
 
+# GOARCH for linux enable:
+#	"amd64", "arm64", "mips64", "mips64le", "ppc64", "ppc64le", "riscv64", "s390x", "wasm"
+#	"loong64" may need c source code
+# Detail: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
+
 release: windows linux arm64 mips64
 	@echo "copy files to server..."
 	@scp -p ${DIST_WINDOWS} wlstl:/home/shares/archiving/v5release/luwakInstall/micro-services/bin
