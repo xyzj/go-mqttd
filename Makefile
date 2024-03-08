@@ -1,4 +1,4 @@
-BINARY_NAME=go-mqttd
+BINARY_NAME=stmq
 MAIN_VER=2.4.6
 
 DIST_WINDOWS=_dist/${BINARY_NAME}.exe

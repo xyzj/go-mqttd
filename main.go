@@ -18,9 +18,9 @@ import (
 var (
 	gover      = ""
 	cover      = ""
-	configfile = pathtool.JoinPathFromHere("go-mqttd.conf")
+	configfile = pathtool.JoinPathFromHere("stmq.conf")
 	conf       = config.NewConfig("")
-	confile    = flag.String("config", "", "config file path, default is go-mqttd.conf")
+	confile    = flag.String("config", "", "config file path, default is stmq.conf")
 	authfile   = flag.String("auth", "", "auth file path")
 )
 
@@ -123,9 +123,9 @@ func createAuthFile(filename string) {
 func main() {
 	svr := mqtt.New(nil)
 	gocmd.DefaultProgram(&gocmd.Info{
-		Ver:      "Core ver:\t" + cover + "\nGo ver:\t" + gover,
+		Ver:      "Core ver: " + cover + "\nGo ver:   " + gover,
 		Title:    "golang mqtt broker",
-		Descript: "based on github.com/mochi-mqtt/server",
+		Descript: "",
 	}).AfterStop(func() {
 		svr.Close()
 	}).Execute()
