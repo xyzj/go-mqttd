@@ -7,7 +7,7 @@ DIST_ARM64=_dist/${BINARY_NAME}-arm64
 DIST_MIPS64=_dist/${BINARY_NAME}-mips64
 
 GO_VER=`go version | cut -d \  -f 3`
-LDFLAGS="-s -w -X 'main.gover=${GO_VER}' -X 'main.cover=${MAIN_VER}'"
+LDFLAGS="-s -w -X 'main.gover=${GO_VER}' -X 'main.cover=${MAIN_VER}' -X 'main.confname=${BINARY_NAME}.conf'"
 
 # GOARCH for linux enable:
 #	"amd64", "arm64", "mips64", "mips64le", "ppc64", "ppc64le", "riscv64", "s390x", "wasm"

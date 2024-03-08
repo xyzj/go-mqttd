@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"flag"
+	listener "go-mqttd/listener"
 	"os"
 
 	mqtt "github.com/mochi-mqtt/server/v2"
@@ -16,12 +17,14 @@ import (
 )
 
 var (
-	gover      = ""
-	cover      = ""
-	configfile = pathtool.JoinPathFromHere("stmq.conf")
-	conf       = config.NewConfig("")
-	confile    = flag.String("config", "", "config file path, default is stmq.conf")
-	authfile   = flag.String("auth", "", "auth file path")
+	gover       = ""
+	cover       = ""
+	confname    = "stmq.conf"
+	configfile  = pathtool.JoinPathFromHere(confname)
+	conf        = config.NewConfig("")
+	confile     = flag.String("config", "", "config file path, default is "+confname)
+	authfile    = flag.String("auth", "", "auth file path")
+	disableAuth = flag.Bool("disable-auth", false, "disable auth file, ignore -auth")
 )
 
 func GetServerTLSConfig(certfile, keyfile, clientca string) (*tls.Config, error) {
@@ -172,15 +175,19 @@ func main() {
 		conf.ToFile()
 	}
 	// 设置权限
-	au := fromAuthFile()
-	// 追加内置账户
-	au.Auth = append(au.Auth,
-		auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
-		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
-	)
-	svr.AddHook(&auth.Hook{}, &auth.Options{
-		Ledger: au,
-	})
+	if !*disableAuth {
+		au := fromAuthFile()
+		// 追加内置账户
+		au.Auth = append(au.Auth,
+			auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
+			auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
+		)
+		svr.AddHook(&auth.Hook{}, &auth.Options{
+			Ledger: au,
+		})
+	} else {
+		svr.AddHook(&auth.AllowHook{}, nil)
+	}
 	// mqtt tls端口
 	if mqtttls != "" {
 		err = svr.AddListener(listeners.NewTCP("mqtt-tls", mqtttls, &listeners.Config{
@@ -198,7 +205,7 @@ func main() {
 		return
 	}
 	// 监听网络状态
-	err = svr.AddListener(listeners.NewHTTPStats("web", webport, &listeners.Config{}, svr.Info))
+	err = svr.AddListener(listener.NewHTTPStats("web", webport, &listeners.Config{}, svr.Clients))
 	if err != nil {
 		println("HTTP", ""+err.Error())
 		return
