@@ -128,7 +128,7 @@ func main() {
 	gocmd.DefaultProgram(&gocmd.Info{
 		Ver:      "Core ver: " + cover + "\nGo ver:   " + gover,
 		Title:    "golang mqtt broker",
-		Descript: "",
+		Descript: "based on mochi-mqtt",
 	}).AfterStop(func() {
 		svr.Close()
 	}).Execute()
@@ -140,14 +140,14 @@ func main() {
 	conf.FromFile(configfile)
 	tl, err := GetServerTLSConfig(
 		conf.GetDefault(&config.Item{
-			Key:     "cert_file",
+			Key:     "mqtt_tls_cert",
 			Value:   "localhost.pem",
-			Comment: "cert file",
+			Comment: "tls cert file",
 		}).String(),
 		conf.GetDefault(&config.Item{
-			Key:     "cert_key",
+			Key:     "mqtt_tls_key",
 			Value:   "localhost-key.pem",
-			Comment: "key file",
+			Comment: "tls key file",
 		}).String(),
 		"")
 	var mqtttls string
@@ -155,18 +155,18 @@ func main() {
 		println(err.Error())
 	} else {
 		mqtttls = ":" + conf.GetDefault(&config.Item{
-			Key:     "port_mqtt_tls",
+			Key:     "mqtt_tls_port",
 			Value:   "1881",
 			Comment: "mqtt服务tls端口",
 		}).String()
 	}
 	mqttport := ":" + conf.GetDefault(&config.Item{
-		Key:     "port_mqtt",
+		Key:     "mqtt_port",
 		Value:   "1883",
 		Comment: "mqtt服务端口",
 	}).String()
 	webport := ":" + conf.GetDefault(&config.Item{
-		Key:     "port_web",
+		Key:     "mqtt_web",
 		Value:   "1880",
 		Comment: "mqtt服务状态查看端口",
 	}).String()
