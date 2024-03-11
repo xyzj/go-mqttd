@@ -205,7 +205,7 @@ func main() {
 		return
 	}
 	// 监听网络状态
-	err = svr.AddListener(listener.NewHTTPStats("web", webport, &listeners.Config{}, svr.Clients))
+	err = svr.AddListener(listener.NewHTTPStats("web", webport, &listeners.Config{}, svr.Info, svr.Clients))
 	if err != nil {
 		println("HTTP", ""+err.Error())
 		return

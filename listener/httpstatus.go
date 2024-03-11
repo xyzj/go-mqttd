@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -14,6 +15,8 @@ import (
 	"github.com/gin-gonic/gin/render"
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/listeners"
+	"github.com/mochi-mqtt/server/v2/system"
+	"github.com/xyzj/gopsu/json"
 )
 
 var (
@@ -115,23 +118,25 @@ var (
 // HTTPStats is a listener for presenting the server $SYS stats on a JSON http endpoint.
 type HTTPStats struct {
 	sync.RWMutex
-	id          string            // the internal id of the listener
-	address     string            // the network address to bind to
 	config      *listeners.Config // configuration values for the listener
 	listen      *http.Server      // the http server
+	sysInfo     *system.Info      // pointers to the server data
 	clientsInfo *mqtt.Clients     // pointers to the server data
 	log         *slog.Logger      // server logger
+	id          string            // the internal id of the listener
+	address     string            // the network address to bind to
 	end         uint32            // ensure the close methods are only called once
 }
 
 // NewHTTPStats initialises and returns a new HTTP listener, listening on an address.
-func NewHTTPStats(id, address string, config *listeners.Config, cliInfo *mqtt.Clients) *HTTPStats {
+func NewHTTPStats(id, address string, config *listeners.Config, sysInfo *system.Info, cliInfo *mqtt.Clients) *HTTPStats {
 	if config == nil {
 		config = new(listeners.Config)
 	}
 	return &HTTPStats{
 		id:          id,
 		address:     address,
+		sysInfo:     sysInfo,
 		clientsInfo: cliInfo,
 		config:      config,
 	}
@@ -160,7 +165,9 @@ func (l *HTTPStats) Protocol() string {
 func (l *HTTPStats) Init(log *slog.Logger) error {
 	l.log = log
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", l.jsonHandler)
+	mux.HandleFunc("/info", l.infoHandler)
+	mux.HandleFunc("/clients", l.clientHandler)
+	mux.HandleFunc("/raw", l.debugHandler)
 	l.listen = &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
@@ -205,8 +212,8 @@ func (l *HTTPStats) Close(closeClients listeners.CloseFn) {
 	closeClients(l.id)
 }
 
-// jsonHandler is an HTTP handler which outputs the $SYS stats as JSON.
-func (l *HTTPStats) jsonHandler(w http.ResponseWriter, req *http.Request) {
+// clientHandler is an HTTP handler which outputs the $SYS stats as JSON.
+func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 	info := l.clientsInfo.GetAll()
 	sss := make([][]string, 0)
 	idx := 0
@@ -227,4 +234,28 @@ func (l *HTTPStats) jsonHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	h.WriteContentType(w)
 	h.Render(w)
+}
+
+// infoHandler is an HTTP handler which outputs the $SYS stats as JSON.
+func (l *HTTPStats) infoHandler(w http.ResponseWriter, req *http.Request) {
+	info := *l.sysInfo.Clone()
+
+	out, err := json.MarshalIndent(info, "", "\t")
+	if err != nil {
+		_, _ = io.WriteString(w, err.Error())
+	}
+
+	_, _ = w.Write(out)
+}
+
+// debugHandler is an HTTP handler which outputs the $SYS stats as JSON.
+func (l *HTTPStats) debugHandler(w http.ResponseWriter, req *http.Request) {
+	info := l.clientsInfo.GetAll()
+	for _, v := range info {
+		s, err := json.MarshalIndent(v, "", "  ")
+		if err == nil {
+			w.Write(s)
+			w.Write([]byte{10})
+		}
+	}
 }
