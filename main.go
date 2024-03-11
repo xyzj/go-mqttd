@@ -162,7 +162,7 @@ func main() {
 	}
 	mqttport := ":" + conf.GetDefault(&config.Item{
 		Key:     "mqtt_port",
-		Value:   "1883",
+		Value:   "1882",
 		Comment: "mqtt服务端口",
 	}).String()
 	webport := ":" + conf.GetDefault(&config.Item{
