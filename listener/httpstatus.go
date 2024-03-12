@@ -2,13 +2,13 @@ package listener
 
 import (
 	"context"
-	"fmt"
 	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -96,10 +96,11 @@ var (
 		<table>
 			<thead>
 			<tr>
-			<th>序号</th>
 			<th>客户端ID</th>
 			<th>客户端IP</th>
 			<th>协议版本</th>
+			<th>协议类型</th>
+			<th>订阅信息</th>
 			</tr>
 			</thead>
 			<tbody>
@@ -216,11 +217,13 @@ func (l *HTTPStats) Close(closeClients listeners.CloseFn) {
 // clientHandler is an HTTP handler which outputs the $SYS stats as JSON.
 func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 	info := l.clientsInfo.GetAll()
-	sss := make([][]string, 0)
-	idx := 0
+	sss := make([][]string, 0, len(info))
 	for _, v := range info {
-		idx++
-		sss = append(sss, []string{fmt.Sprintf("%04d", idx), v.ID, v.Net.Remote, strconv.Itoa(int(v.Properties.ProtocolVersion))})
+		var s = make([]string, 0)
+		for k, x := range v.State.Subscriptions.GetAll() {
+			s = append(s, k+":"+strconv.Itoa(int(x.Qos)))
+		}
+		sss = append(sss, []string{v.ID, v.Net.Remote, strconv.Itoa(int(v.Properties.ProtocolVersion)), v.Net.Listener, strings.Join(s, ";")})
 	}
 	sort.Slice(sss, func(i, j int) bool {
 		return sss[i][0] < sss[j][0]
