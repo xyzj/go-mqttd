@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"sort"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -221,7 +222,9 @@ func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 		idx++
 		sss = append(sss, []string{fmt.Sprintf("%04d", idx), v.ID, v.Net.Remote, strconv.Itoa(int(v.Properties.ProtocolVersion))})
 	}
-
+	sort.Slice(sss, func(i, j int) bool {
+		return sss[i][0] < sss[j][0]
+	})
 	d := map[string]any{
 		"timer":   time.Now().String(),
 		"clients": sss,
