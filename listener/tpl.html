@@ -1,0 +1,107 @@
+<html lang="zh-cn">
+
+<head>
+    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+    <script language="JavaScript">
+        function myrefresh() {
+            window.location.reload();
+        }
+        setTimeout('myrefresh()', 180000); //指定180s刷新一次
+    </script>
+    <style type="text/css">
+        a {
+            color: #4183C4;
+            font-size: 16px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            margin: 20px 0 10px;
+            padding: 0;
+            font-weight: bold;
+            -webkit-font-smoothing: antialiased;
+            cursor: text;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: black;
+        }
+
+        h2 {
+            font-size: 24px;
+            border-bottom: 1px solid #cccccc;
+            color: black;
+        }
+
+        h3 {
+            font-size: 18px;
+        }
+
+        h4 {
+            font-size: 16px;
+        }
+
+        h5 {
+            font-size: 14px;
+        }
+
+        h6 {
+            color: #777777;
+            font-size: 14px;
+        }
+
+        table {
+            padding: 0;
+        }
+
+        table tr {
+            border-top: 1px solid #000000;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+
+        table tr td:nth-of-type(1) {
+            text-align: left;
+        }
+
+        table tr:nth-child(2n) {
+            background-color: #e8ffcd;
+        }
+
+        table tr th {
+            font-weight: bold;
+            background-color: #fffcd0;
+            border: 1px solid #cccccc;
+            text-align: center;
+            margin: 0;
+            padding: 6px 13px;
+        }
+
+        table tr td {
+            border: 1px solid #cccccc;
+            text-align: center;
+            margin: 0;
+            padding: 6px 13px;
+        }
+
+        table tr th :first-child,
+        table tr td :first-child {
+            margin-top: 0;
+        }
+
+        table tr th :last-child,
+        table tr td :last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+{{template "body" .}}
+
+</html>

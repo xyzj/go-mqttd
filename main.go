@@ -138,6 +138,12 @@ func main() {
 	}
 	//  读取配置
 	conf.FromFile(configfile)
+	// tls端口
+	mqtttls := conf.GetDefault(&config.Item{
+		Key:     "mqtt_tls_port",
+		Value:   "1882",
+		Comment: "mqtt服务tls端口",
+	}).String()
 	tl, err := GetServerTLSConfig(
 		conf.GetDefault(&config.Item{
 			Key:     "mqtt_tls_cert",
@@ -150,25 +156,24 @@ func main() {
 			Comment: "tls key file",
 		}).String(),
 		"")
-	var mqtttls string
 	if err != nil {
+		mqtttls = ""
 		println(err.Error())
-	} else {
-		mqtttls = ":" + conf.GetDefault(&config.Item{
-			Key:     "mqtt_tls_port",
-			Value:   "1881",
-			Comment: "mqtt服务tls端口",
-		}).String()
 	}
-	mqttport := ":" + conf.GetDefault(&config.Item{
+	mqttport := conf.GetDefault(&config.Item{
 		Key:     "mqtt_port",
-		Value:   "1882",
+		Value:   "1883",
 		Comment: "mqtt服务端口",
 	}).String()
-	webport := ":" + conf.GetDefault(&config.Item{
+	webport := conf.GetDefault(&config.Item{
 		Key:     "mqtt_web",
 		Value:   "1880",
 		Comment: "mqtt服务状态查看端口",
+	}).String()
+	wsport := conf.GetDefault(&config.Item{
+		Key:     "mqtt_ws",
+		Value:   "",
+		Comment: "mqtt服务ws端口，默认1881",
 	}).String()
 	// 保存配置
 	if *confile != "" {
@@ -190,30 +195,42 @@ func main() {
 	}
 	// mqtt tls端口
 	if mqtttls != "" {
-		err = svr.AddListener(listeners.NewTCP("mqtt-tls", mqtttls, &listeners.Config{
+		err = svr.AddListener(listeners.NewTCP("tls", ":"+mqtttls, &listeners.Config{
 			TLSConfig: tl,
 		}))
 		if err != nil {
-			println("MQTTd", ""+err.Error())
+			println("MQTT-TLS", ""+err.Error())
 			return
 		}
 	}
-	// // mqtt端口
-	err = svr.AddListener(listeners.NewTCP("mqtt-svr", mqttport, &listeners.Config{}))
-	if err != nil {
-		println("MQTTd", ""+err.Error())
-		return
+	// mqtt端口
+	if mqttport != "" {
+		err = svr.AddListener(listeners.NewTCP("mqtt", ":"+mqttport, &listeners.Config{}))
+		if err != nil {
+			println("MQTT", ""+err.Error())
+			return
+		}
 	}
 	// 监听网络状态
-	err = svr.AddListener(listener.NewHTTPStats("web", webport, &listeners.Config{}, svr.Info, svr.Clients))
-	if err != nil {
-		println("HTTP", ""+err.Error())
-		return
+	if webport != "" {
+		err = svr.AddListener(listener.NewHTTPStats("web", ":"+webport, &listeners.Config{}, svr.Info, svr.Clients))
+		if err != nil {
+			println("HTTP", ""+err.Error())
+			return
+		}
+	}
+	// 监听ws
+	if wsport != "" {
+		err = svr.AddListener(listeners.NewWebsocket("ws", ":"+webport, &listeners.Config{}))
+		if err != nil {
+			println("WS", ""+err.Error())
+			return
+		}
 	}
 	// 启动服务
 	err = svr.Serve()
 	if err != nil {
-		println("MQTTd", ""+err.Error())
+		println("MQTT", ""+err.Error())
 		return
 	}
 	select {}

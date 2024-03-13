@@ -2,13 +2,13 @@ package listener
 
 import (
 	"context"
+	_ "embed"
 	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -20,100 +20,35 @@ import (
 	"github.com/xyzj/gopsu/json"
 )
 
+//go:embed tpl.html
+var t1 string
+
 var (
-	t1 = `<html lang="zh-cn">
-	    <head>
-	    <meta content="text/html; charset=utf-8" http-equiv="content-type" />
-		<script language="JavaScript">
-	      function myrefresh()
-	        {
-	          window.location.reload();
-	        }
-	      setTimeout('myrefresh()',180000); //指定180s刷新一次
-	    </script>
-		{{template "css"}}
-		</head>
-		{{template "body" .}}
-	</html>`
-	t2 = `{{define "css"}}
-	<style type="text/css">
-		a {
-	      color: #4183C4;
-	      font-size: 16px; }
-		h1, h2, h3, h4, h5, h6 {
-          margin: 20px 0 10px;
-          padding: 0;
-          font-weight: bold;
-          -webkit-font-smoothing: antialiased;
-          cursor: text;
-          position: relative; }
-		h1 {
-	      font-size: 28px;
-	      color: black; }
-	    h2 {
-	      font-size: 24px;
-	      border-bottom: 1px solid #cccccc;
-	      color: black; }
-	    h3 {
-	      font-size: 18px; }
-	    h4 {
-	      font-size: 16px; }
-	    h5 {
-	      font-size: 14px; }
-	    h6 {
-	      color: #777777;
-	      font-size: 14px; }
-	    table {
-	      padding: 0; }
-  	      table tr {
-  	        border-top: 1px solid #cccccc;
-  	        background-color: white;
-  	        margin: 0;
-  	        padding: 0; }
-  	        table tr:nth-child(2n) {
-  	          background-color: #f8f8f8; }
-  	        table tr th {
-  	          font-weight: bold;
-  	          border: 1px solid #cccccc;
-  	          text-align: center;
-  	          margin: 0;
-  	          padding: 6px 13px; }
-  	        table tr td {
-  	          border: 1px solid #cccccc;
-  	          text-align: center;
-  	          margin: 0;
-  	          padding: 6px 13px; }
-  	        table tr th :first-child, table tr td :first-child {
-  	          margin-top: 0; }
-  	        table tr th :last-child, table tr td :last-child {
-  	          margin-bottom: 0; }
-	</style>
-	{{end}}`
 	t3 = `{{define "body"}}
-	<body>
-		<h3>服务器时间：</h3><a>{{.timer}}</a>
-		<h3>在线设备信息：</h3>
-		<table>
-			<thead>
-			<tr>
-			<th>客户端ID</th>
-			<th>客户端IP</th>
-			<th>协议版本</th>
-			<th>协议类型</th>
-			<th>订阅信息</th>
-			</tr>
-			</thead>
-			<tbody>
-				{{range $idx, $elem := .clients}}
-				<tr>
-					{{range $key,$value:=$elem}}
-						<td>{{$value}}</td>
-					{{end}}
-				</tr>
-				{{end}}
-			</tbody>
-		</table>
-	</body>
+<body>
+    <h3>服务器时间：</h3><a>{{.timer}}</a>
+    <h3>在线设备信息：</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>客户端ID</th>
+                <th>客户端IP</th>
+                <th>协议版本</th>
+                <th>协议类型</th>
+                <th>订阅数量</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range $idx, $elem := .clients}}
+            <tr>
+                {{range $key,$value:=$elem}}
+                <td>{{$value}}</td>
+                {{end}}
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</body>
 	{{end}}`
 )
 
@@ -219,11 +154,7 @@ func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 	info := l.clientsInfo.GetAll()
 	sss := make([][]string, 0, len(info))
 	for _, v := range info {
-		var s = make([]string, 0)
-		for k, x := range v.State.Subscriptions.GetAll() {
-			s = append(s, k+":"+strconv.Itoa(int(x.Qos)))
-		}
-		sss = append(sss, []string{v.ID, v.Net.Remote, strconv.Itoa(int(v.Properties.ProtocolVersion)), v.Net.Listener, strings.Join(s, ";")})
+		sss = append(sss, []string{v.ID, v.Net.Remote, strconv.Itoa(int(v.Properties.ProtocolVersion)), v.Net.Listener, strconv.Itoa(v.State.Subscriptions.Len())})
 	}
 	sort.Slice(sss, func(i, j int) bool {
 		return sss[i][0] < sss[j][0]
@@ -232,7 +163,7 @@ func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 		"timer":   time.Now().String(),
 		"clients": sss,
 	}
-	t, _ := template.New("systemStatus").Parse(t1 + t2 + t3)
+	t, _ := template.New("systemStatus").Parse(t1 + t3)
 	h := render.HTML{
 		Name:     "systemStatus",
 		Data:     d,
