@@ -26,16 +26,16 @@ var t1 string
 var (
 	t3 = `{{define "body"}}
 <body>
-    <h3>服务器时间：</h3><a>{{.timer}}</a>
-    <h3>在线设备信息：</h3>
+    <h3>Server time:</h3><a>{{.timer}}</a>
+    <h3>Online Clients</h3>
     <table>
         <thead>
             <tr>
-                <th>客户端ID</th>
-                <th>客户端IP</th>
-                <th>协议版本</th>
-                <th>协议类型</th>
-                <th>订阅数量</th>
+                <th>Client ID</th>
+                <th>Client IP</th>
+                <th>Client Ver</th>
+                <th>Protocol</th>
+                <th>Subscribes</th>
             </tr>
         </thead>
         <tbody>

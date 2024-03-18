@@ -29,6 +29,7 @@ windows:
 linux: modtidy
 	@echo "building linux amd64 version..."
 	@GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_LINUX} -ldflags=${LDFLAGS} main.go
+	@upx ${DIST_LINUX}
 	@echo "done.\n"
 
 arm64: modtidy
