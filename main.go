@@ -10,6 +10,7 @@ import (
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/xyzj/gopsu"
 	"github.com/xyzj/gopsu/config"
+	"github.com/xyzj/gopsu/crypto"
 	"github.com/xyzj/gopsu/gocmd"
 	"github.com/xyzj/gopsu/pathtool"
 	"gopkg.in/yaml.v3"
@@ -152,6 +153,19 @@ func main() {
 		Ver:      "Core ver: " + cover + "\nGo ver:   " + gover,
 		Title:    "golang mqtt broker",
 		Descript: "based on mochi-mqtt, support MQTT v3.11 and MQTT v5.0",
+	}).AddCommand(&gocmd.Command{
+		Name:     "genecc",
+		Descript: "generate ECC certificate files",
+		RunWithExitCode: func(pi *gocmd.ProcInfo) int {
+			c := crypto.NewECC()
+			c.GenerateKey(crypto.ECPrime256v1)
+			if err := c.ToFile("localhost.pem", "localhost-key.pem"); err != nil {
+				println(err.Error())
+				return 1
+			}
+			println("done.")
+			return 0
+		},
 	}).AfterStop(func() {
 		svr.Close()
 	}).Execute()
