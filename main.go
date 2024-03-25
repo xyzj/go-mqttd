@@ -179,7 +179,9 @@ func main() {
 	}
 	// mqtt tls service
 	if o.tls != "" {
-		err = svr.AddListener(listeners.NewTCP("tls", ":"+o.tls, &listeners.Config{
+		err = svr.AddListener(listeners.NewTCP(listeners.Config{
+			ID:        "tls",
+			Address:   ":" + o.tls,
 			TLSConfig: tl,
 		}))
 		if err != nil {
@@ -189,7 +191,11 @@ func main() {
 	}
 	// mqtt service
 	if o.mqtt != "" {
-		err = svr.AddListener(listeners.NewTCP("mqtt", ":"+o.mqtt, &listeners.Config{}))
+		err = svr.AddListener(listeners.NewTCP(listeners.Config{
+			ID:        "mqtt",
+			Address:   ":" + o.mqtt,
+			TLSConfig: nil,
+		}))
 		if err != nil {
 			svr.Log.Error("MQTT service error: " + err.Error())
 			return
@@ -205,7 +211,11 @@ func main() {
 	}
 	// websocket service
 	if o.ws != "" {
-		err = svr.AddListener(listeners.NewWebsocket("ws", ":"+o.ws, &listeners.Config{}))
+		err = svr.AddListener(listeners.NewWebsocket(listeners.Config{
+			ID:        "ws",
+			Address:   ":" + o.ws,
+			TLSConfig: nil,
+		}))
 		if err != nil {
 			svr.Log.Error("WS service error: " + err.Error())
 			return

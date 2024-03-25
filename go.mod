@@ -2,14 +2,11 @@ module go-mqttd
 
 go 1.22.0
 
-replace (
-	github.com/mochi-mqtt/server/v2 => /config/go/src/github.com/mochi-mqtt/server
-	github.com/xyzj/gopsu => /config/go/src/github.com/xyzj/gopsu
-)
+replace github.com/xyzj/gopsu => /config/go/src/github.com/xyzj/gopsu
 
 require (
 	github.com/gin-gonic/gin v1.9.1
-	github.com/mochi-mqtt/server/v2 v2.4.6
+	github.com/mochi-mqtt/server/v2 v2.6.0
 	github.com/xyzj/gopsu v0.0.0-00010101000000-000000000000
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -29,7 +26,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
