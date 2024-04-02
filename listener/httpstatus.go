@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -36,6 +37,7 @@ var (
                 <th>Client Ver</th>
                 <th>Protocol</th>
                 <th>Subscribes</th>
+                <th>Sub Detail</th>
             </tr>
         </thead>
         <tbody>
@@ -154,7 +156,14 @@ func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 	info := l.clientsInfo.GetAll()
 	sss := make([][]string, 0, len(info))
 	for _, v := range info {
-		sss = append(sss, []string{v.ID, v.Net.Remote, strconv.Itoa(int(v.Properties.ProtocolVersion)), v.Net.Listener, strconv.Itoa(v.State.Subscriptions.Len())})
+		var ss = make([]string, 0)
+		for k := range v.State.Subscriptions.GetAll() {
+			ss = append(ss, k)
+		}
+		sort.Slice(ss, func(i, j int) bool {
+			return ss[i] < ss[j]
+		})
+		sss = append(sss, []string{v.ID, v.Net.Remote, strconv.Itoa(int(v.Properties.ProtocolVersion)), v.Net.Listener, strconv.Itoa(v.State.Subscriptions.Len()), strings.Join(ss, "\n")}) //
 	}
 	sort.Slice(sss, func(i, j int) bool {
 		return sss[i][0] < sss[j][0]

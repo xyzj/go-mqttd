@@ -45,7 +45,7 @@ func loadConf() *opt {
 	conf.FromFile(configfile)
 	o.tls = conf.GetDefault(&config.Item{
 		Key:     "mqtt_tls_port",
-		Value:   "1882",
+		Value:   "1881",
 		Comment: "mqtt+tls port",
 	}).String()
 
@@ -62,7 +62,7 @@ func loadConf() *opt {
 	o.ws = conf.GetDefault(&config.Item{
 		Key:     "mqtt_ws",
 		Value:   "",
-		Comment: "websocket port, default: 1881",
+		Comment: "websocket port, default: 1882",
 	}).String()
 	o.cert = conf.GetDefault(&config.Item{
 		Key:     "mqtt_tls_cert",
