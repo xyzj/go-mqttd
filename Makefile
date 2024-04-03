@@ -1,4 +1,4 @@
-BINARY_NAME=stmq
+BINARY_NAME=go-mqttd
 MAIN_VER=2.6.0
 
 DIST_WINDOWS=_dist/${BINARY_NAME}.exe
@@ -16,9 +16,9 @@ LDFLAGS="-s -w -X 'main.gover=${GO_VER}' -X 'main.cover=${MAIN_VER}' -X 'main.co
 
 release: windows linux arm64
 	@echo "copy files to server..."
-	@scp -p ${DIST_WINDOWS} wlstl:/home/shares/archiving/v5release/luwakInstall/micro-services/bin
-	@scp -p ${DIST_LINUX} wlstl:/home/shares/archiving/v5release/luwak_linux/programs
-	@scp -p ${DIST_ARM64} wlstl:/home/shares/archiving/v5release/luwak_arm64/bin
+	@scp -p ${DIST_WINDOWS} wlstl:/home/shares/archiving/v5release/luwakInstall/micro-services/bin/stmq.exe
+	@scp -p ${DIST_LINUX} wlstl:/home/shares/archiving/v5release/luwak_linux/programs/stmq
+	@scp -p ${DIST_ARM64} wlstl:/home/shares/archiving/v5release/luwak_arm64/bin/stmq-arm64
 	@echo "\nall done."
 
 windows:
