@@ -158,9 +158,20 @@ func main() {
 		Descript: "generate ECC certificate files",
 		RunWithExitCode: func(pi *gocmd.ProcInfo) int {
 			c := crypto.NewECC()
-			if err := c.CreateCert([]string{"*.xyzjdays.xyz", "localhost"},
-				[]string{"127.0.0.1"},
-			); err != nil {
+			ips, _, err := gopsu.GlobalIPs()
+			if err != nil {
+				ips = []string{"127.0.0.1"}
+			}
+			local := false
+			for _, v := range ips {
+				if v == "127.0.0.1" {
+					local = true
+				}
+			}
+			if !local {
+				ips = append(ips, "127.0.0.1")
+			}
+			if err := c.CreateCert([]string{"*.wlst.vip", "localhost"}, ips); err != nil {
 				println(err.Error())
 				return 1
 			}
