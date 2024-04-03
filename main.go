@@ -19,7 +19,7 @@ import (
 var (
 	gover       = ""
 	cover       = ""
-	confname    = "stmq.conf"
+	confname    = "go-mqttd.conf"
 	configfile  = pathtool.JoinPathFromHere(confname)
 	conf        = config.NewConfig("")
 	confile     = flag.String("config", "", "config file path, default is "+confname)
@@ -66,12 +66,12 @@ func loadConf() *opt {
 	}).String()
 	o.cert = conf.GetDefault(&config.Item{
 		Key:     "mqtt_tls_cert",
-		Value:   "localhost.pem",
+		Value:   "cert.ec.pem",
 		Comment: "tls cert file path",
 	}).String()
 	o.key = conf.GetDefault(&config.Item{
 		Key:     "mqtt_tls_key",
-		Value:   "localhost-key.pem",
+		Value:   "cert-key.ec.pem",
 		Comment: "tls key file path",
 	}).String()
 	// save config
@@ -158,8 +158,9 @@ func main() {
 		Descript: "generate ECC certificate files",
 		RunWithExitCode: func(pi *gocmd.ProcInfo) int {
 			c := crypto.NewECC()
-			c.GenerateKey(crypto.ECPrime256v1)
-			if err := c.ToFile("localhost.pem", "localhost-key.pem"); err != nil {
+			if err := c.CreateCert([]string{"*.xyzjdays.xyz", "localhost"},
+				[]string{"127.0.0.1"},
+			); err != nil {
 				println(err.Error())
 				return 1
 			}
@@ -194,7 +195,7 @@ func main() {
 	// mqtt tls service
 	if o.tls != "" {
 		err = svr.AddListener(listeners.NewTCP(listeners.Config{
-			ID:        "tls",
+			ID:        "mqtt+tls",
 			Address:   ":" + o.tls,
 			TLSConfig: tl,
 		}))
@@ -228,7 +229,7 @@ func main() {
 		err = svr.AddListener(listeners.NewWebsocket(listeners.Config{
 			ID:        "ws",
 			Address:   ":" + o.ws,
-			TLSConfig: nil,
+			TLSConfig: tl,
 		}))
 		if err != nil {
 			svr.Log.Error("WS service error: " + err.Error())
