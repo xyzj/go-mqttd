@@ -23,23 +23,23 @@ release: windows linux arm64
 
 windows:
 	@echo "building windows amd64 version..."
-	@GOARCH=amd64 GOOS=windows CGO_ENABLED=0 go build -o ${DIST_WINDOWS} -ldflags=${LDFLAGS} main.go
+	@GOARCH=amd64 GOOS=windows CGO_ENABLED=0 go build -o ${DIST_WINDOWS} -ldflags=${LDFLAGS} cmd/main.go
 	@echo "done.\n"
 
 linux: modtidy
 	@echo "building linux amd64 version..."
-	@GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_LINUX} -ldflags=${LDFLAGS} main.go
+	@GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_LINUX} -ldflags=${LDFLAGS} cmd/main.go
 	@upx ${DIST_LINUX}
 	@echo "done.\n"
 
 arm64: modtidy
 	@echo "building linux arm64/aarch64 version..."
-	@GOARCH=arm64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_ARM64} -ldflags=${LDFLAGS} main.go
+	@GOARCH=arm64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_ARM64} -ldflags=${LDFLAGS} cmd/main.go
 	@echo "done.\n"
 
 mips64: modtidy
 	@echo "building linux mips64 version..."
-	@GOARCH=mips64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_MIPS64} -ldflags=${LDFLAGS} main.go
+	@GOARCH=mips64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_MIPS64} -ldflags=${LDFLAGS} cmd/main.go
 	@echo "done.\n"
 
 modtidy:

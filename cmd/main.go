@@ -2,11 +2,12 @@ package main
 
 import (
 	"flag"
-	"go-mqttd/server"
+	"gomqttd/server"
 
 	"github.com/xyzj/gopsu"
 	"github.com/xyzj/gopsu/crypto"
 	"github.com/xyzj/gopsu/gocmd"
+	"github.com/xyzj/gopsu/pathtool"
 )
 
 var (
@@ -23,7 +24,7 @@ func main() {
 		DisableAuth: *disableAuth,
 		Confile: func(name string) string {
 			if name == "" {
-				return confname
+				return pathtool.JoinPathFromHere(confname)
 			}
 			return name
 		}(*confile),
