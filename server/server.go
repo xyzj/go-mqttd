@@ -1,7 +1,7 @@
 package server
 
 import (
-	"gomqttd/listener"
+	"go-mqttd/listener"
 	"os"
 
 	mqtt "github.com/mochi-mqtt/server/v2"

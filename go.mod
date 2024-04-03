@@ -1,4 +1,4 @@
-module gomqttd
+module go-mqttd
 
 go 1.22.0
 

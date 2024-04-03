@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"gomqttd/server"
+	"go-mqttd/server"
 
 	"github.com/xyzj/gopsu"
 	"github.com/xyzj/gopsu/crypto"
