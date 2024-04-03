@@ -63,7 +63,7 @@ func main() {
 			if !local {
 				ips = append(ips, "127.0.0.1")
 			}
-			if err := c.CreateCert([]string{"*.wlst.vip", "localhost"}, ips); err != nil {
+			if err := c.CreateCert([]string{"localhost"}, ips); err != nil {
 				println(err.Error())
 				return 1
 			}

@@ -11,12 +11,19 @@ import (
 	"github.com/xyzj/gopsu/config"
 )
 
+// Opt server option
 type Opt struct {
-	Confile     string
-	Authfile    string
+	// Confile net config file path
+	Confile string
+	// Authfile auth config file path
+	Authfile string
+	// DisableAuth clients do not need username and password
 	DisableAuth bool
-	InsideJob   bool
+	// InsideJob enable or disable inline client
+	InsideJob bool
 }
+
+// MqttServer a new mqtt server
 type MqttServer struct {
 	svr  *mqtt.Server
 	opt  *Opt
@@ -32,6 +39,7 @@ type svrOpt struct {
 	key  string // tls key file path
 }
 
+// NewServer make a new server
 func NewServer(opt *Opt) *MqttServer {
 	// read buffer size env
 	size := gopsu.String2Int(os.Getenv("MQTT_CLIENT_BUFFER_SIZE"), 10)
@@ -52,19 +60,25 @@ func NewServer(opt *Opt) *MqttServer {
 		conf: o,
 	}
 }
+
+// SaveConfig save server config to a file
 func (m *MqttServer) SaveConfig() error {
 	return m.conf.conf.ToFile()
 }
 
+// Stop close server
 func (m *MqttServer) Stop() {
 	m.svr.Close()
 }
 
+// Run start server and wait
 func (m *MqttServer) Run() {
 	if m.Start() == nil {
 		select {}
 	}
 }
+
+// Start start server
 func (m *MqttServer) Start() error {
 	// set auth
 	if !m.opt.DisableAuth {
@@ -139,10 +153,12 @@ func (m *MqttServer) Start() error {
 	return nil
 }
 
+// Subscribe use inline client to receive message
 func (m *MqttServer) Subscribe(filter string, subscriptionId int, handler mqtt.InlineSubFn) error {
 	return m.svr.Subscribe(filter, subscriptionId, handler)
 }
 
-func (m *MqttServer) Publish(topic string, payload []byte, retain bool, qos byte) error {
-	return m.svr.Publish(topic, payload, retain, qos)
+// Publish use inline client publish a message,retain==false
+func (m *MqttServer) Publish(topic string, payload []byte, qos byte) error {
+	return m.svr.Publish(topic, payload, false, qos)
 }
