@@ -15,6 +15,7 @@ type Opt struct {
 	Confile     string
 	Authfile    string
 	DisableAuth bool
+	InsideJob   bool
 }
 type MqttServer struct {
 	svr  *mqtt.Server
@@ -39,7 +40,7 @@ func NewServer(opt *Opt) *MqttServer {
 	}
 	// a new svr
 	svr := mqtt.New(&mqtt.Options{
-		InlineClient:             false,
+		InlineClient:             opt.InsideJob,
 		ClientNetWriteBufferSize: 1024 * size,
 		ClientNetReadBufferSize:  1024 * size,
 	})
@@ -136,4 +137,12 @@ func (m *MqttServer) Start() error {
 		return err
 	}
 	return nil
+}
+
+func (m *MqttServer) Subscribe(filter string, subscriptionId int, handler mqtt.InlineSubFn) error {
+	return m.svr.Subscribe(filter, subscriptionId, handler)
+}
+
+func (m *MqttServer) Publish(topic string, payload []byte, retain bool, qos byte) error {
+	return m.svr.Publish(topic, payload, retain, qos)
 }
