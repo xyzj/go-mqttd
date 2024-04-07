@@ -3,20 +3,32 @@ package server
 import (
 	"go-mqttd/listener"
 	"os"
+	"strconv"
 
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/xyzj/gopsu"
-	"github.com/xyzj/gopsu/config"
 )
 
 // Opt server option
 type Opt struct {
-	// Confile net config file path
-	Confile string
+	// tls cert file path
+	Cert string
+	// tls key file path
+	Key string
+	// tls root ca file path
+	RootCA string
 	// Authfile auth config file path
 	Authfile string
+	// mqtt port
+	PortMqtt int
+	// mqtt+tls port
+	PortTLS int
+	// http status port
+	PortWeb int
+	// websocket port
+	PortWS int
 	// DisableAuth clients do not need username and password
 	DisableAuth bool
 	// InsideJob enable or disable inline client
@@ -25,19 +37,8 @@ type Opt struct {
 
 // MqttServer a new mqtt server
 type MqttServer struct {
-	svr  *mqtt.Server
-	opt  *Opt
-	conf *svrOpt
-}
-type svrOpt struct {
-	conf   *config.File
-	mqtt   string // mqtt port
-	tls    string // mqtt+tls port
-	web    string // http status port
-	ws     string // websocket port
-	cert   string // tls cert file path
-	key    string // tls key file path
-	rootca string
+	svr *mqtt.Server
+	opt *Opt
 }
 
 // NewServer make a new server
@@ -53,18 +54,10 @@ func NewServer(opt *Opt) *MqttServer {
 		ClientNetWriteBufferSize: 1024 * size,
 		ClientNetReadBufferSize:  1024 * size,
 	})
-	// load config
-	o := loadConf(opt.Confile)
 	return &MqttServer{
-		svr:  svr,
-		opt:  opt,
-		conf: o,
+		svr: svr,
+		opt: opt,
 	}
-}
-
-// SaveConfig save server config to a file
-func (m *MqttServer) SaveConfig() error {
-	return m.conf.conf.ToFile()
 }
 
 // Stop close server
@@ -96,16 +89,16 @@ func (m *MqttServer) Start() error {
 		m.svr.AddHook(&auth.AllowHook{}, nil)
 	}
 	// check tls files
-	tl, err := gopsu.GetServerTLSConfig(m.conf.cert, m.conf.key, m.conf.rootca)
+	tl, err := gopsu.GetServerTLSConfig(m.opt.Cert, m.opt.Key, m.opt.RootCA)
 	if err != nil {
-		m.conf.tls = ""
+		m.opt.PortTLS = 0
 		m.svr.Log.Warn(err.Error())
 	}
 	// mqtt tls service
-	if m.conf.tls != "" {
+	if m.opt.PortTLS > 0 && m.opt.PortTLS < 65535 {
 		err = m.svr.AddListener(listeners.NewTCP(listeners.Config{
 			ID:        "mqtt+tls",
-			Address:   ":" + m.conf.tls,
+			Address:   ":" + strconv.Itoa(m.opt.PortTLS),
 			TLSConfig: tl,
 		}))
 		if err != nil {
@@ -114,10 +107,10 @@ func (m *MqttServer) Start() error {
 		}
 	}
 	// mqtt service
-	if m.conf.mqtt != "" {
+	if m.opt.PortMqtt > 0 && m.opt.PortMqtt < 65535 {
 		err = m.svr.AddListener(listeners.NewTCP(listeners.Config{
 			ID:        "mqtt",
-			Address:   ":" + m.conf.mqtt,
+			Address:   ":" + strconv.Itoa(m.opt.PortMqtt),
 			TLSConfig: nil,
 		}))
 		if err != nil {
@@ -126,18 +119,18 @@ func (m *MqttServer) Start() error {
 		}
 	}
 	// http status service
-	if m.conf.web != "" {
-		err = m.svr.AddListener(listener.NewHTTPStats("web", ":"+m.conf.web, &listeners.Config{}, m.svr.Info, m.svr.Clients))
+	if m.opt.PortWeb > 0 && m.opt.PortWeb < 65535 {
+		err = m.svr.AddListener(listener.NewHTTPStats("web", ":"+strconv.Itoa(m.opt.PortWeb), &listeners.Config{}, m.svr.Info, m.svr.Clients))
 		if err != nil {
 			m.svr.Log.Error("HTTP service error: " + err.Error())
 			return err
 		}
 	}
 	// websocket service
-	if m.conf.ws != "" {
+	if m.opt.PortWS > 0 && m.opt.PortWS < 65535 {
 		err = m.svr.AddListener(listeners.NewWebsocket(listeners.Config{
 			ID:        "ws",
-			Address:   ":" + m.conf.ws,
+			Address:   ":" + strconv.Itoa(m.opt.PortWS),
 			TLSConfig: tl,
 		}))
 		if err != nil {

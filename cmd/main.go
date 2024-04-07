@@ -5,6 +5,7 @@ import (
 	"go-mqttd/server"
 
 	"github.com/xyzj/gopsu"
+	"github.com/xyzj/gopsu/config"
 	"github.com/xyzj/gopsu/crypto"
 	"github.com/xyzj/gopsu/gocmd"
 	"github.com/xyzj/gopsu/pathtool"
@@ -19,32 +20,85 @@ var (
 	disableAuth = flag.Bool("disable-auth", false, "disable auth check, ignore -auth")
 )
 
+type svrOpt struct {
+	conf   *config.File
+	mqtt   int    // mqtt port
+	tls    int    // mqtt+tls port
+	web    int    // http status port
+	ws     int    // websocket port
+	cert   string // tls cert file path
+	key    string // tls key file path
+	rootca string
+}
+
+func loadConf(configfile string) *svrOpt {
+	conf := config.NewConfig("")
+	//  load config
+	conf.FromFile(configfile)
+	o := &svrOpt{}
+	o.tls = conf.GetDefault(&config.Item{
+		Key:     "port_tls",
+		Value:   "1881",
+		Comment: "mqtt+tls port",
+	}).TryInt()
+
+	o.mqtt = conf.GetDefault(&config.Item{
+		Key:     "port_mqtt",
+		Value:   "1883",
+		Comment: "mqtt port",
+	}).TryInt()
+	o.web = conf.GetDefault(&config.Item{
+		Key:     "port_web",
+		Value:   "1880",
+		Comment: "http status port",
+	}).TryInt()
+	o.ws = conf.GetDefault(&config.Item{
+		Key:     "port_ws",
+		Value:   "",
+		Comment: "websocket port, default: 1882",
+	}).TryInt()
+	o.cert = conf.GetDefault(&config.Item{
+		Key:     "tls_cert_file",
+		Value:   "cert.ec.pem",
+		Comment: "tls cert file path",
+	}).String()
+	o.key = conf.GetDefault(&config.Item{
+		Key:     "tls_key_file",
+		Value:   "cert-key.ec.pem",
+		Comment: "tls key file path",
+	}).String()
+	o.rootca = conf.GetDefault(&config.Item{
+		Key:     "tls_ca_file",
+		Value:   "root.ec.pem",
+		Comment: "tls root ca file path",
+	}).String()
+	o.conf = conf
+	// save config
+	conf.ToFile()
+	return o
+}
+
 func main() {
+	flag.Parse()
+	if *confile == "" {
+		*confile = pathtool.JoinPathFromHere(confname)
+	}
+	o := loadConf(*confile)
 	svr := server.NewServer(&server.Opt{
+		PortTLS:     o.tls,
+		PortWeb:     o.web,
+		PortWS:      o.ws,
+		PortMqtt:    o.mqtt,
+		Cert:        o.cert,
+		Key:         o.key,
+		RootCA:      o.rootca,
 		DisableAuth: *disableAuth,
-		Confile: func(name string) string {
-			if name == "" {
-				return pathtool.JoinPathFromHere(confname)
-			}
-			return name
-		}(*confile),
-		Authfile: *authfile,
+		Authfile:    *authfile,
 	})
 	gocmd.DefaultProgram(&gocmd.Info{
 		Ver:      "Core ver: " + cover + "\nGo ver:   " + gover,
 		Title:    "golang mqtt broker",
 		Descript: "based on mochi-mqtt, support MQTT v3.11 and MQTT v5.0",
-	}).AddCommand(&gocmd.Command{
-		Name:     "default-config",
-		Descript: "create default config file",
-		RunWithExitCode: func(pi *gocmd.ProcInfo) int {
-			if err := svr.SaveConfig(); err != nil {
-				println("save config file error: " + err.Error())
-				return 1
-			}
-			println("file save as " + confname)
-			return 0
-		},
 	}).AddCommand(&gocmd.Command{
 		Name:     "genecc",
 		Descript: "generate ECC certificate files",
