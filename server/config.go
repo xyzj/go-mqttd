@@ -38,10 +38,13 @@ func loadConf(configfile string) *svrOpt {
 		Value:   "cert-key.ec.pem",
 		Comment: "tls key file path",
 	}).String()
+	o.rootca = conf.GetDefault(&config.Item{
+		Key:     "tls_ca_file",
+		Value:   "root.ec.pem",
+		Comment: "tls root ca file path",
+	}).String()
 	o.conf = conf
 	// save config
-	// if *confile != "" {
-	// 	conf.ToFile()
-	// }
+	conf.ToFile()
 	return o
 }

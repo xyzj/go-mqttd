@@ -30,13 +30,14 @@ type MqttServer struct {
 	conf *svrOpt
 }
 type svrOpt struct {
-	conf *config.File
-	mqtt string // mqtt port
-	tls  string // mqtt+tls port
-	web  string // http status port
-	ws   string // websocket port
-	cert string // tls cert file path
-	key  string // tls key file path
+	conf   *config.File
+	mqtt   string // mqtt port
+	tls    string // mqtt+tls port
+	web    string // http status port
+	ws     string // websocket port
+	cert   string // tls cert file path
+	key    string // tls key file path
+	rootca string
 }
 
 // NewServer make a new server
@@ -95,7 +96,7 @@ func (m *MqttServer) Start() error {
 		m.svr.AddHook(&auth.AllowHook{}, nil)
 	}
 	// check tls files
-	tl, err := gopsu.GetServerTLSConfig(m.conf.cert, m.conf.key, "")
+	tl, err := gopsu.GetServerTLSConfig(m.conf.cert, m.conf.key, m.conf.rootca)
 	if err != nil {
 		m.conf.tls = ""
 		m.svr.Log.Warn(err.Error())
