@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"go-mqttd/listener"
 	"os"
 	"strconv"
@@ -62,6 +63,9 @@ func NewServer(opt *Opt) *MqttServer {
 
 // Stop close server
 func (m *MqttServer) Stop() {
+	if m == nil || m.svr == nil {
+		return
+	}
 	m.svr.Close()
 }
 
@@ -74,6 +78,9 @@ func (m *MqttServer) Run() {
 
 // Start start server
 func (m *MqttServer) Start() error {
+	if m == nil || m.svr == nil {
+		return fmt.Errorf("use NewServer() to create a new mqtt server")
+	}
 	// set auth
 	if !m.opt.DisableAuth {
 		au := fromAuthFile(m.opt.Authfile)

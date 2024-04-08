@@ -79,22 +79,7 @@ func loadConf(configfile string) *svrOpt {
 }
 
 func main() {
-	flag.Parse()
-	if *confile == "" {
-		*confile = pathtool.JoinPathFromHere(confname)
-	}
-	o := loadConf(*confile)
-	svr := server.NewServer(&server.Opt{
-		PortTLS:     o.tls,
-		PortWeb:     o.web,
-		PortWS:      o.ws,
-		PortMqtt:    o.mqtt,
-		Cert:        o.cert,
-		Key:         o.key,
-		RootCA:      o.rootca,
-		DisableAuth: *disableAuth,
-		Authfile:    *authfile,
-	})
+	var svr *server.MqttServer
 	gocmd.DefaultProgram(&gocmd.Info{
 		Ver:      "Core ver: " + cover + "\nGo ver:   " + gover,
 		Title:    "golang mqtt broker",
@@ -130,5 +115,22 @@ func main() {
 	}).AfterStop(func() {
 		svr.Stop()
 	}).Execute()
+
+	if *confile == "" {
+		*confile = pathtool.JoinPathFromHere(confname)
+	}
+	o := loadConf(*confile)
+
+	svr = server.NewServer(&server.Opt{
+		PortTLS:     o.tls,
+		PortWeb:     o.web,
+		PortWS:      o.ws,
+		PortMqtt:    o.mqtt,
+		Cert:        o.cert,
+		Key:         o.key,
+		RootCA:      o.rootca,
+		DisableAuth: *disableAuth,
+		Authfile:    *authfile,
+	})
 	svr.Run()
 }
