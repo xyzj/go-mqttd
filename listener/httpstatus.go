@@ -40,7 +40,7 @@ var (
                 <th>Client Ver</th>
                 <th>Protocol</th>
                 <th>Subscribes</th>
-                <th>Sub Detail</th>
+                <th>Subscribe Detail</th>
             </tr>
         </thead>
         <tbody>
@@ -79,7 +79,7 @@ func (o *Lopt) String() string {
 	if o.PortWS > 0 && o.PortWS < 65535 {
 		s = append(s, "ws: "+strconv.Itoa(o.PortWS))
 	}
-	return strings.Join(s, ";  ")
+	return strings.Join(s, "; ")
 }
 
 // HTTPStats is a listener for presenting the server $SYS stats on a JSON http endpoint.
@@ -187,6 +187,9 @@ func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 	sss := make([][]string, 0, len(info))
 	counts := make(map[string]int)
 	for _, v := range info {
+		if v.Net.Listener == "local" || v.ID == "inline" {
+			continue
+		}
 		var ss = make([]string, 0)
 		for k := range v.State.Subscriptions.GetAll() {
 			ss = append(ss, k)
@@ -195,6 +198,7 @@ func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 			return ss[i] < ss[j]
 		})
 		sss = append(sss, []string{v.ID, v.Net.Remote, strconv.Itoa(int(v.Properties.ProtocolVersion)), v.Net.Listener, strconv.Itoa(v.State.Subscriptions.Len()), strings.Join(ss, "\n")}) //
+
 		if vv, ok := counts[v.Net.Listener]; ok {
 			counts[v.Net.Listener] = vv + 1
 		} else {
