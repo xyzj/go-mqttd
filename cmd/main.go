@@ -69,7 +69,7 @@ func loadConf(configfile string) *svrOpt {
 	}).String()
 	o.rootca = conf.GetDefault(&config.Item{
 		Key:     "tls_ca_file",
-		Value:   "root.ec.pem",
+		Value:   "",
 		Comment: "tls root ca file path",
 	}).String()
 	o.conf = conf

@@ -18,6 +18,7 @@ import (
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/mochi-mqtt/server/v2/system"
+	"github.com/xyzj/gopsu"
 	"github.com/xyzj/gopsu/json"
 )
 
@@ -27,8 +28,10 @@ var t1 string
 var (
 	t3 = `{{define "body"}}
 <body>
-    <h3>Server time:</h3><a>{{.timer}}</a>
-    <h3>Online Clients</h3>
+    <h3>Current Time:</h3><a>{{.timer}}</a>
+    <h3>Uptime</h3><a>{{.uptime}}</a>
+    <h3>Listeners:</h3><a>{{.listener}}</a>
+    <h3>Clients</h3><a>{{.counts}}</a>
     <table>
         <thead>
             <tr>
@@ -54,6 +57,31 @@ var (
 	{{end}}`
 )
 
+type Lopt struct {
+	// mqtt port
+	PortMqtt int
+	// mqtt+tls port
+	PortTLS int
+	// http status port
+	PortWeb int
+	// websocket port
+	PortWS int
+}
+
+func (o *Lopt) String() string {
+	var s = []string{}
+	if o.PortMqtt > 0 && o.PortMqtt < 65535 {
+		s = append(s, "mqtt: "+strconv.Itoa(o.PortMqtt))
+	}
+	if o.PortTLS > 0 && o.PortTLS < 65535 {
+		s = append(s, "mqtt+tls: "+strconv.Itoa(o.PortTLS))
+	}
+	if o.PortWS > 0 && o.PortWS < 65535 {
+		s = append(s, "ws: "+strconv.Itoa(o.PortWS))
+	}
+	return strings.Join(s, ";  ")
+}
+
 // HTTPStats is a listener for presenting the server $SYS stats on a JSON http endpoint.
 type HTTPStats struct {
 	sync.RWMutex
@@ -62,22 +90,24 @@ type HTTPStats struct {
 	sysInfo     *system.Info      // pointers to the server data
 	clientsInfo *mqtt.Clients     // pointers to the server data
 	log         *slog.Logger      // server logger
-	id          string            // the internal id of the listener
-	address     string            // the network address to bind to
-	end         uint32            // ensure the close methods are only called once
+	lopt        *Lopt
+	id          string // the internal id of the listener
+	address     string // the network address to bind to
+	end         uint32 // ensure the close methods are only called once
 }
 
 // NewHTTPStats initialises and returns a new HTTP listener, listening on an address.
-func NewHTTPStats(id, address string, config *listeners.Config, sysInfo *system.Info, cliInfo *mqtt.Clients) *HTTPStats {
+func NewHTTPStats(config *listeners.Config, sysInfo *system.Info, cliInfo *mqtt.Clients, lopt *Lopt) *HTTPStats {
 	if config == nil {
 		config = new(listeners.Config)
 	}
 	return &HTTPStats{
-		id:          id,
-		address:     address,
+		id:          config.ID,
+		address:     config.Address,
 		sysInfo:     sysInfo,
 		clientsInfo: cliInfo,
 		config:      config,
+		lopt:        lopt,
 	}
 }
 
@@ -155,6 +185,7 @@ func (l *HTTPStats) Close(closeClients listeners.CloseFn) {
 func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 	info := l.clientsInfo.GetAll()
 	sss := make([][]string, 0, len(info))
+	counts := make(map[string]int)
 	for _, v := range info {
 		var ss = make([]string, 0)
 		for k := range v.State.Subscriptions.GetAll() {
@@ -164,13 +195,28 @@ func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 			return ss[i] < ss[j]
 		})
 		sss = append(sss, []string{v.ID, v.Net.Remote, strconv.Itoa(int(v.Properties.ProtocolVersion)), v.Net.Listener, strconv.Itoa(v.State.Subscriptions.Len()), strings.Join(ss, "\n")}) //
+		if vv, ok := counts[v.Net.Listener]; ok {
+			counts[v.Net.Listener] = vv + 1
+		} else {
+			counts[v.Net.Listener] = 1
+		}
 	}
 	sort.Slice(sss, func(i, j int) bool {
 		return sss[i][0] < sss[j][0]
 	})
+	var c = []string{}
+	for k, v := range counts {
+		c = append(c, k+": "+strconv.Itoa(v))
+	}
+	sort.Slice(c, func(i, j int) bool {
+		return c[i] < c[j]
+	})
 	d := map[string]any{
-		"timer":   time.Now().String(),
-		"clients": sss,
+		"timer":    time.Now().String(),
+		"uptime":   gopsu.Seconds2String(l.sysInfo.Uptime),
+		"listener": l.lopt.String(),
+		"counts":   strings.Join(c, "; "),
+		"clients":  sss,
 	}
 	t, _ := template.New("systemStatus").Parse(t1 + t3)
 	h := render.HTML{

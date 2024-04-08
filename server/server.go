@@ -125,14 +125,6 @@ func (m *MqttServer) Start() error {
 			return err
 		}
 	}
-	// http status service
-	if m.opt.PortWeb > 0 && m.opt.PortWeb < 65535 {
-		err = m.svr.AddListener(listener.NewHTTPStats("web", ":"+strconv.Itoa(m.opt.PortWeb), &listeners.Config{}, m.svr.Info, m.svr.Clients))
-		if err != nil {
-			m.svr.Log.Error("HTTP service error: " + err.Error())
-			return err
-		}
-	}
 	// websocket service
 	if m.opt.PortWS > 0 && m.opt.PortWS < 65535 {
 		err = m.svr.AddListener(listeners.NewWebsocket(listeners.Config{
@@ -142,6 +134,25 @@ func (m *MqttServer) Start() error {
 		}))
 		if err != nil {
 			m.svr.Log.Error("WS service error: " + err.Error())
+			return err
+		}
+	}
+	// http status service
+	if m.opt.PortWeb > 0 && m.opt.PortWeb < 65535 {
+		err = m.svr.AddListener(listener.NewHTTPStats(&listeners.Config{
+			ID:      "web",
+			Address: ":" + strconv.Itoa(m.opt.PortWeb),
+		},
+			m.svr.Info,
+			m.svr.Clients,
+			&listener.Lopt{
+				PortMqtt: m.opt.PortMqtt,
+				PortTLS:  m.opt.PortTLS,
+				PortWS:   m.opt.PortWS,
+			},
+		))
+		if err != nil {
+			m.svr.Log.Error("HTTP service error: " + err.Error())
 			return err
 		}
 	}
