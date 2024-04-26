@@ -6,7 +6,7 @@ replace github.com/xyzj/gopsu => /config/go/src/github.com/xyzj/gopsu
 
 require (
 	github.com/gin-gonic/gin v1.9.1
-	github.com/mochi-mqtt/server/v2 v2.6.1
+	github.com/mochi-mqtt/server/v2 v2.6.2
 	github.com/xyzj/gopsu v0.0.0-00010101000000-000000000000
 	gopkg.in/yaml.v3 v3.0.1
 )
