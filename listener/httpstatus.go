@@ -20,13 +20,13 @@ import (
 	"github.com/mochi-mqtt/server/v2/system"
 	"github.com/xyzj/gopsu"
 	"github.com/xyzj/gopsu/json"
+	"github.com/xyzj/gopsu/proc"
 )
 
 //go:embed tpl.html
 var t1 string
 
-var (
-	t3 = `{{define "body"}}
+var t3 = `{{define "body"}}
 <body>
     <h3>Current Time:</h3><a>{{.timer}}</a>
     <h3>Uptime</h3><a>{{.uptime}}</a>
@@ -55,7 +55,6 @@ var (
     </table>
 </body>
 	{{end}}`
-)
 
 type Lopt struct {
 	// mqtt port
@@ -69,7 +68,7 @@ type Lopt struct {
 }
 
 func (o *Lopt) String() string {
-	var s = []string{}
+	s := []string{}
 	if o.PortMqtt > 0 && o.PortMqtt < 65535 {
 		s = append(s, "mqtt: "+strconv.Itoa(o.PortMqtt))
 	}
@@ -133,10 +132,15 @@ func (l *HTTPStats) Protocol() string {
 // Init initializes the listener.
 func (l *HTTPStats) Init(log *slog.Logger) error {
 	l.log = log
+	p := proc.NewRecorder(&proc.RecordOpt{
+		Timer: time.Second * 60,
+		Name:  "MQTT Broker",
+	})
 	mux := http.NewServeMux()
-	mux.HandleFunc("/info", l.infoHandler)
-	mux.HandleFunc("/clients", l.clientHandler)
-	mux.HandleFunc("/raw", l.debugHandler)
+	mux.HandleFunc("/information", l.infoHandler)
+	mux.HandleFunc("/connected", l.clientHandler)
+	mux.HandleFunc("/rawinfo", l.debugHandler)
+	mux.HandleFunc("/processrecords", p.HTTPHandler)
 	l.listen = &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
@@ -153,7 +157,6 @@ func (l *HTTPStats) Init(log *slog.Logger) error {
 
 // Serve starts listening for new connections and serving responses.
 func (l *HTTPStats) Serve(establish listeners.EstablishFn) {
-
 	var err error
 	if l.listen.TLSConfig != nil {
 		err = l.listen.ListenAndServeTLS("", "")
@@ -190,7 +193,7 @@ func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 		if v.Net.Listener == "local" || v.ID == "inline" {
 			continue
 		}
-		var ss = make([]string, 0)
+		ss := make([]string, 0)
 		for k := range v.State.Subscriptions.GetAll() {
 			ss = append(ss, k)
 		}
@@ -208,7 +211,7 @@ func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 	sort.Slice(sss, func(i, j int) bool {
 		return sss[i][0] < sss[j][0]
 	})
-	var c = []string{}
+	c := []string{}
 	for k, v := range counts {
 		c = append(c, k+": "+strconv.Itoa(v))
 	}
