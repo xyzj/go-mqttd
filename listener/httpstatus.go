@@ -133,8 +133,9 @@ func (l *HTTPStats) Protocol() string {
 func (l *HTTPStats) Init(log *slog.Logger) error {
 	l.log = log
 	p := proc.NewRecorder(&proc.RecordOpt{
-		Timer: time.Second * 60,
-		Name:  "MQTT Broker",
+		Timer:       time.Second * 60,
+		Name:        "MQTT Broker",
+		DataTimeout: time.Hour * 24 * 7,
 	})
 	mux := http.NewServeMux()
 	mux.HandleFunc("/information", l.infoHandler)
