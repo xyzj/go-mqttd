@@ -2,9 +2,10 @@ package server
 
 import (
 	"fmt"
-	"go-mqttd/listener"
 	"os"
 	"strconv"
+
+	"go-mqttd/listener"
 
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/hooks/auth"

@@ -24,13 +24,16 @@ var (
 				ACL: auth.Filters{
 					"down/#": auth.ReadOnly,
 					"up/#":   auth.WriteOnly,
-				}},
+				},
+			},
 			"lostjudgment": {
 				Username: "lostjudgment",
 				Password: "yagami",
 				ACL: auth.Filters{
-					"deny/#": auth.Deny,
-					"rw/#":   auth.ReadWrite,
+					"deny/#":  auth.Deny,
+					"read/#":  auth.ReadOnly,
+					"write/#": auth.WriteOnly,
+					"rw/#":    auth.ReadWrite,
 				},
 			},
 		},
@@ -55,13 +58,14 @@ func fromAuthFile(authfile string) *auth.Ledger {
 	}
 	return ac
 }
+
 func createAuthFile(filename string) {
 	b, err := yaml.Marshal(authSample)
 	if err != nil {
 		println(err.Error())
 		return
 	}
-	err = os.WriteFile(filename, b, 0664)
+	err = os.WriteFile(filename, b, 0o664)
 	if err != nil {
 		println(err.Error())
 	}

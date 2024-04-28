@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+
 	"go-mqttd/server"
 
 	"github.com/xyzj/gopsu"
