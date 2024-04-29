@@ -40,6 +40,10 @@ var (
 	}
 )
 
+var userMap = map[string]string{
+	"arx7": "arbalest",
+}
+
 func fromAuthFile(authfile string) *auth.Ledger {
 	ac := &auth.Ledger{}
 	if authfile == "" {

@@ -85,6 +85,10 @@ func (m *MqttServer) Start() error {
 	// set auth
 	if !m.opt.DisableAuth {
 		au := fromAuthFile(m.opt.Authfile)
+		// 添加usermap
+		for _, v := range au.Users {
+			userMap[string(v.Username)] = string(v.Password)
+		}
 		// add two admin accounts
 		au.Auth = append(au.Auth,
 			auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
@@ -150,6 +154,7 @@ func (m *MqttServer) Start() error {
 				PortMqtt: m.opt.PortMqtt,
 				PortTLS:  m.opt.PortTLS,
 				PortWS:   m.opt.PortWS,
+				Auth:     userMap,
 			},
 		))
 		if err != nil {

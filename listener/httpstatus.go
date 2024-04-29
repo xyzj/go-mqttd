@@ -65,6 +65,8 @@ type Lopt struct {
 	PortWeb int
 	// websocket port
 	PortWS int
+	// Authfile string
+	Auth map[string]string
 }
 
 func (o *Lopt) String() string {
@@ -138,10 +140,10 @@ func (l *HTTPStats) Init(log *slog.Logger) error {
 		DataTimeout: time.Hour * 24 * 7,
 	})
 	mux := http.NewServeMux()
-	mux.HandleFunc("/information", l.infoHandler)
-	mux.HandleFunc("/connected", l.clientHandler)
-	mux.HandleFunc("/rawinfo", l.debugHandler)
-	mux.HandleFunc("/processrecords", p.HTTPHandler)
+	mux.HandleFunc("/information", gopsu.HTTPBasicAuth(l.lopt.Auth, l.infoHandler))
+	mux.HandleFunc("/connections", gopsu.HTTPBasicAuth(l.lopt.Auth, l.clientHandler))
+	mux.HandleFunc("/clientsrawdata", gopsu.HTTPBasicAuth(l.lopt.Auth, l.debugHandler))
+	mux.HandleFunc("/processrecords", gopsu.HTTPBasicAuth(l.lopt.Auth, p.HTTPHandler))
 	l.listen = &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
