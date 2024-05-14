@@ -1,9 +1,11 @@
 package server
 
 import (
+	"crypto/tls"
 	"fmt"
 	"os"
 	"strconv"
+	"sync/atomic"
 
 	"go-mqttd/listener"
 
@@ -11,10 +13,15 @@ import (
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/xyzj/gopsu"
+	"github.com/xyzj/gopsu/crypto"
 )
 
 // Opt server option
 type Opt struct {
+	// TLSConfig tls config，when set, ignore Cert, Key and RootCA
+	TLSConfig *tls.Config
+	// AuthConfig auth config，when set, ignore Authfile
+	AuthConfig *auth.Ledger
 	// tls cert file path
 	Cert string
 	// tls key file path
@@ -41,6 +48,7 @@ type Opt struct {
 type MqttServer struct {
 	svr *mqtt.Server
 	opt *Opt
+	st  *atomic.Bool
 }
 
 // NewServer make a new server
@@ -59,6 +67,7 @@ func NewServer(opt *Opt) *MqttServer {
 	return &MqttServer{
 		svr: svr,
 		opt: opt,
+		st:  &atomic.Bool{},
 	}
 }
 
@@ -68,13 +77,21 @@ func (m *MqttServer) Stop() {
 		return
 	}
 	m.svr.Close()
+	m.st.Store(false)
 }
 
 // Run start server and wait
 func (m *MqttServer) Run() {
 	if m.Start() == nil {
+		m.st.Store(true)
 		select {}
 	}
+	m.st.Store(false)
+}
+
+// IsRunning check the server status
+func (m *MqttServer) IsRunning() bool {
+	return m.st.Load()
 }
 
 // Start start server
@@ -84,16 +101,21 @@ func (m *MqttServer) Start() error {
 	}
 	// set auth
 	if !m.opt.DisableAuth {
-		au := fromAuthFile(m.opt.Authfile)
-		// 添加usermap
-		for _, v := range au.Users {
-			userMap[string(v.Username)] = string(v.Password)
+		var au *auth.Ledger
+		if m.opt.AuthConfig != nil {
+			au = m.opt.AuthConfig
+		} else {
+			au = fromAuthFile(m.opt.Authfile)
+			// 添加usermap
+			for _, v := range au.Users {
+				userMap[string(v.Username)] = string(v.Password)
+			}
+			// add two admin accounts
+			au.Auth = append(au.Auth,
+				auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
+				auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
+			)
 		}
-		// add two admin accounts
-		au.Auth = append(au.Auth,
-			auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
-			auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
-		)
 		m.svr.AddHook(&auth.Hook{}, &auth.Options{
 			Ledger: au,
 		})
@@ -101,10 +123,16 @@ func (m *MqttServer) Start() error {
 		m.svr.AddHook(&auth.AllowHook{}, nil)
 	}
 	// check tls files
-	tl, err := gopsu.GetServerTLSConfig(m.opt.Cert, m.opt.Key, m.opt.RootCA)
-	if err != nil {
-		m.opt.PortTLS = 0
-		m.svr.Log.Warn(err.Error())
+	var tl *tls.Config
+	var err error
+	if m.opt.TLSConfig != nil {
+		tl = m.opt.TLSConfig
+	} else {
+		tl, err = crypto.TLSConfigFromFile(m.opt.Cert, m.opt.Key, m.opt.RootCA)
+		if err != nil {
+			m.opt.PortTLS = 0
+			m.svr.Log.Warn(err.Error())
+		}
 	}
 	// mqtt tls service
 	if m.opt.PortTLS > 0 && m.opt.PortTLS < 65535 {
