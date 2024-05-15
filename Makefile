@@ -21,7 +21,7 @@ release: windows linux arm64
 	@scp -p ${DIST_ARM64} wlstl:/home/shares/archiving/v5release/luwak_arm64/bin/stmq-arm64
 	@echo "\nall done."
 
-windows:
+windows: modtidy
 	@echo "building windows amd64 version..."
 	@GOARCH=amd64 GOOS=windows CGO_ENABLED=0 go build -o ${DIST_WINDOWS} -ldflags=${LDFLAGS} cmd/main.go
 	@echo "done.\n"
