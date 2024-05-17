@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 /*
@@ -16,7 +16,7 @@ import (
 3-ReadWrite               // user can both publish and subscribe to the topic
 */
 var (
-	authSample = &auth.Ledger{
+	AuthSample = &auth.Ledger{
 		Users: map[string]auth.UserRule{
 			"mqttdevices": {
 				Username: "mqttdevices",
@@ -40,37 +40,24 @@ var (
 	}
 )
 
-var userMap = map[string]string{
-	"arx7": "arbalest",
-}
-
-func fromAuthFile(authfile string) *auth.Ledger {
+func FromAuthfile(authfile string) (*auth.Ledger, error) {
 	ac := &auth.Ledger{}
-	if authfile == "" {
-		return ac
-	}
 	b, err := os.ReadFile(authfile)
 	if err != nil {
-		createAuthFile(authfile)
-		return ac
+		return nil, err
 	}
 
 	err = yaml.Unmarshal(b, &ac)
 	if err != nil {
-		createAuthFile(authfile)
-		return authSample
+		return nil, err
 	}
-	return ac
+	return ac, nil
 }
 
-func createAuthFile(filename string) {
-	b, err := yaml.Marshal(authSample)
+func InitAuthfile(filename string) error {
+	b, err := yaml.Marshal(AuthSample)
 	if err != nil {
-		println(err.Error())
-		return
+		return err
 	}
-	err = os.WriteFile(filename, b, 0o664)
-	if err != nil {
-		println(err.Error())
-	}
+	return os.WriteFile(filename, b, 0o664)
 }

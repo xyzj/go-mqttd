@@ -5,6 +5,7 @@ import (
 
 	"go-mqttd/server"
 
+	"github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/xyzj/gopsu"
 	"github.com/xyzj/gopsu/config"
 	"github.com/xyzj/gopsu/crypto"
@@ -81,47 +82,71 @@ func loadConf(configfile string) *svrOpt {
 
 func main() {
 	var svr *server.MqttServer
-	gocmd.DefaultProgram(&gocmd.Info{
-		Ver:      "Core ver: " + cover + "\nGo ver:   " + gover,
-		Title:    "golang mqtt broker",
-		Descript: "based on mochi-mqtt, support MQTT v3.11 and MQTT v5.0",
-	}).AddCommand(&gocmd.Command{
-		Name:     "genecc",
-		Descript: "generate ECC certificate files",
-		RunWithExitCode: func(pi *gocmd.ProcInfo) int {
-			c := crypto.NewECC()
-			ips, _, err := gopsu.GlobalIPs()
-			if err != nil {
-				ips = []string{"127.0.0.1"}
-			}
-			local := false
-			for _, v := range ips {
-				if v == "127.0.0.1" {
-					local = true
+	p := gocmd.DefaultProgram(
+		&gocmd.Info{
+			Ver:      "Core ver: " + cover + "\nGo ver:   " + gover,
+			Title:    "golang mqtt broker",
+			Descript: "based on mochi-mqtt, support MQTT v3.11 and MQTT v5.0",
+		}).
+		AddCommand(&gocmd.Command{
+			Name:     "initauth",
+			Descript: "init a sample authfile",
+			RunWithExitCode: func(pi *gocmd.ProcInfo) int {
+				if server.InitAuthfile(pathtool.JoinPathFromHere("auth.yaml")) != nil {
+					return 1
 				}
-			}
-			if !local {
-				ips = append(ips, "127.0.0.1")
-			}
-			if err := c.CreateCert(&crypto.CertOpt{
-				DNS: []string{"localhost"},
-				IP:  ips,
-			}); err != nil {
-				println(err.Error())
-				return 1
-			}
-			println("done.")
-			return 0
-		},
-	}).AfterStop(func() {
-		svr.Stop()
-	}).Execute()
+				return 0
+			},
+		}).
+		AddCommand(&gocmd.Command{
+			Name:     "genecc",
+			Descript: "generate ECC certificate files",
+			RunWithExitCode: func(pi *gocmd.ProcInfo) int {
+				c := crypto.NewECC()
+				ips, _, err := gopsu.GlobalIPs()
+				if err != nil {
+					ips = []string{"127.0.0.1"}
+				}
+				local := false
+				for _, v := range ips {
+					if v == "127.0.0.1" {
+						local = true
+					}
+				}
+				if !local {
+					ips = append(ips, "127.0.0.1")
+				}
+				if err := c.CreateCert(&crypto.CertOpt{
+					DNS: []string{"localhost"},
+					IP:  ips,
+				}); err != nil {
+					println(err.Error())
+					return 1
+				}
+				println("done.")
+				return 0
+			},
+		}).
+		AfterStop(func() {
+			svr.Stop()
+		})
+	p.Execute()
 
 	if *confile == "" {
 		*confile = pathtool.JoinPathFromHere(confname)
 	}
 	o := loadConf(*confile)
-
+	ac, err := server.FromAuthfile(*authfile)
+	if err != nil {
+		println(err.Error())
+		p.Exit(1)
+		return
+	}
+	// add two admin accounts
+	ac.Auth = append(ac.Auth,
+		auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
+		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
+	)
 	svr = server.NewServer(&server.Opt{
 		PortTLS:     o.tls,
 		PortWeb:     o.web,
@@ -131,7 +156,7 @@ func main() {
 		Key:         o.key,
 		RootCA:      o.rootca,
 		DisableAuth: *disableAuth,
-		Authfile:    *authfile,
+		AuthConfig:  ac,
 	})
 	svr.Run()
 }

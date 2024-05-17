@@ -29,7 +29,7 @@ type Opt struct {
 	// tls root ca file path
 	RootCA string
 	// Authfile auth config file path
-	Authfile string
+	// Authfile string
 	// mqtt port
 	PortMqtt int
 	// mqtt+tls port
@@ -101,23 +101,26 @@ func (m *MqttServer) Start() error {
 	}
 	// set auth
 	if !m.opt.DisableAuth {
-		var au *auth.Ledger
-		if m.opt.AuthConfig != nil {
-			au = m.opt.AuthConfig
-		} else {
-			au = fromAuthFile(m.opt.Authfile)
-			// 添加usermap
-			for _, v := range au.Users {
-				userMap[string(v.Username)] = string(v.Password)
-			}
-			// add two admin accounts
-			au.Auth = append(au.Auth,
-				auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
-				auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
-			)
-		}
+		// var au *auth.Ledger
+		// if m.opt.AuthConfig != nil {
+		// 	au = m.opt.AuthConfig
+		// } else {
+		// 	au = fromAuthFile(m.opt.Authfile)
+		// 	// 添加usermap
+		// 	for _, v := range au.Users {
+		// 		userMap[string(v.Username)] = string(v.Password)
+		// 	}
+		// 	// add two admin accounts
+		// 	au.Auth = append(au.Auth,
+		// 		auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
+		// 		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
+		// 	)
+		// }
+		// if len(userMap) == 0 {
+		// 	userMap["arx7"] = "arbalest"
+		// }
 		m.svr.AddHook(&auth.Hook{}, &auth.Options{
-			Ledger: au,
+			Ledger: m.opt.AuthConfig,
 		})
 	} else {
 		m.svr.AddHook(&auth.AllowHook{}, nil)
@@ -172,6 +175,13 @@ func (m *MqttServer) Start() error {
 	}
 	// http status service
 	if m.opt.PortWeb > 0 && m.opt.PortWeb < 65535 {
+		userMap := make(map[string]string)
+		for _, v := range m.opt.AuthConfig.Auth {
+			userMap[string(v.Username)] = string(v.Password)
+		}
+		for _, v := range m.opt.AuthConfig.Users {
+			userMap[string(v.Username)] = string(v.Password)
+		}
 		err = m.svr.AddListener(listener.NewHTTPStats(&listeners.Config{
 			ID:      "web",
 			Address: ":" + strconv.Itoa(m.opt.PortWeb),
