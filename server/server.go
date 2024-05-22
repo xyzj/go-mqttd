@@ -100,30 +100,12 @@ func (m *MqttServer) Start() error {
 		return fmt.Errorf("use NewServer() to create a new mqtt server")
 	}
 	// set auth
-	if !m.opt.DisableAuth {
-		// var au *auth.Ledger
-		// if m.opt.AuthConfig != nil {
-		// 	au = m.opt.AuthConfig
-		// } else {
-		// 	au = fromAuthFile(m.opt.Authfile)
-		// 	// 添加usermap
-		// 	for _, v := range au.Users {
-		// 		userMap[string(v.Username)] = string(v.Password)
-		// 	}
-		// 	// add two admin accounts
-		// 	au.Auth = append(au.Auth,
-		// 		auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
-		// 		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
-		// 	)
-		// }
-		// if len(userMap) == 0 {
-		// 	userMap["arx7"] = "arbalest"
-		// }
+	if m.opt.DisableAuth || m.opt.AuthConfig == nil {
+		m.svr.AddHook(&auth.AllowHook{}, nil)
+	} else {
 		m.svr.AddHook(&auth.Hook{}, &auth.Options{
 			Ledger: m.opt.AuthConfig,
 		})
-	} else {
-		m.svr.AddHook(&auth.AllowHook{}, nil)
 	}
 	// check tls files
 	var tl *tls.Config
