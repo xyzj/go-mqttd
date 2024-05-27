@@ -3,7 +3,6 @@ package server
 import (
 	"crypto/tls"
 	"fmt"
-	"os"
 	"strconv"
 	"sync/atomic"
 
@@ -12,7 +11,6 @@ import (
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/mochi-mqtt/server/v2/listeners"
-	"github.com/xyzj/gopsu"
 	"github.com/xyzj/gopsu/crypto"
 )
 
@@ -40,6 +38,8 @@ type Opt struct {
 	MaxMsgExpirySeconds int
 	// max session expiry time in seconds
 	MaxSessionExpirySeconds int
+	// clients read and write buffer size in bytes
+	ClientsBufferSize int
 	// DisableAuth clients do not need username and password
 	DisableAuth bool
 	// InsideJob enable or disable inline client
@@ -55,16 +55,14 @@ type MqttServer struct {
 
 // NewServer make a new server
 func NewServer(opt *Opt) *MqttServer {
-	// read buffer size env
-	size := gopsu.String2Int(os.Getenv("MQTT_CLIENT_BUFFER_SIZE"), 10)
-	if size == 0 {
-		size = 4
-	}
 	if opt.MaxSessionExpirySeconds == 0 {
 		opt.MaxSessionExpirySeconds = 60 * 2
 	}
 	if opt.MaxMsgExpirySeconds == 0 {
 		opt.MaxMsgExpirySeconds = 60 * 60 * 2
+	}
+	if opt.ClientsBufferSize < 1024 {
+		opt.ClientsBufferSize = 1024
 	}
 	// a new svr
 	cap := mqtt.NewDefaultServerCapabilities()
@@ -72,8 +70,8 @@ func NewServer(opt *Opt) *MqttServer {
 	cap.MaximumSessionExpiryInterval = uint32(opt.MaxSessionExpirySeconds)
 	svr := mqtt.New(&mqtt.Options{
 		InlineClient:             opt.InsideJob,
-		ClientNetWriteBufferSize: 1024 * size,
-		ClientNetReadBufferSize:  1024 * size,
+		ClientNetWriteBufferSize: opt.ClientsBufferSize,
+		ClientNetReadBufferSize:  opt.ClientsBufferSize,
 		Capabilities:             cap,
 	})
 	return &MqttServer{

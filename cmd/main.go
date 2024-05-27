@@ -23,14 +23,15 @@ var (
 )
 
 type svrOpt struct {
-	conf   *config.File
-	mqtt   int    // mqtt port
-	tls    int    // mqtt+tls port
-	web    int    // http status port
-	ws     int    // websocket port
-	cert   string // tls cert file path
-	key    string // tls key file path
-	rootca string
+	conf    *config.File
+	mqtt    int    // mqtt port
+	tls     int    // mqtt+tls port
+	web     int    // http status port
+	ws      int    // websocket port
+	bufSize int    // read, write buffer size
+	cert    string // tls cert file path
+	key     string // tls key file path
+	rootca  string
 }
 
 func loadConf(configfile string) *svrOpt {
@@ -74,6 +75,7 @@ func loadConf(configfile string) *svrOpt {
 		Value:   "",
 		Comment: "tls root ca file path",
 	}).String()
+	o.bufSize = conf.GetItem("buffer_size").TryInt()
 	o.conf = conf
 	// save config
 	conf.ToFile()
@@ -148,15 +150,16 @@ func main() {
 		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
 	)
 	svr = server.NewServer(&server.Opt{
-		PortTLS:     o.tls,
-		PortWeb:     o.web,
-		PortWS:      o.ws,
-		PortMqtt:    o.mqtt,
-		Cert:        o.cert,
-		Key:         o.key,
-		RootCA:      o.rootca,
-		DisableAuth: *disableAuth,
-		AuthConfig:  ac,
+		PortTLS:           o.tls,
+		PortWeb:           o.web,
+		PortWS:            o.ws,
+		PortMqtt:          o.mqtt,
+		Cert:              o.cert,
+		Key:               o.key,
+		RootCA:            o.rootca,
+		DisableAuth:       *disableAuth,
+		AuthConfig:        ac,
+		ClientsBufferSize: o.bufSize,
 	})
 	svr.Run()
 }
