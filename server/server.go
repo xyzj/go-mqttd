@@ -28,8 +28,6 @@ type Opt struct {
 	Key string
 	// tls root ca file path
 	RootCA string
-	// Authfile auth config file path
-	// Authfile string
 	// mqtt port
 	PortMqtt int
 	// mqtt+tls port
@@ -38,6 +36,10 @@ type Opt struct {
 	PortWeb int
 	// websocket port
 	PortWS int
+	// max message expiry time in seconds
+	MaxMsgExpirySeconds int
+	// max session expiry time in seconds
+	MaxSessionExpirySeconds int
 	// DisableAuth clients do not need username and password
 	DisableAuth bool
 	// InsideJob enable or disable inline client
@@ -58,11 +60,21 @@ func NewServer(opt *Opt) *MqttServer {
 	if size == 0 {
 		size = 4
 	}
+	if opt.MaxSessionExpirySeconds == 0 {
+		opt.MaxSessionExpirySeconds = 60 * 2
+	}
+	if opt.MaxMsgExpirySeconds == 0 {
+		opt.MaxMsgExpirySeconds = 60 * 60 * 2
+	}
 	// a new svr
+	cap := mqtt.NewDefaultServerCapabilities()
+	cap.MaximumMessageExpiryInterval = int64(opt.MaxMsgExpirySeconds)
+	cap.MaximumSessionExpiryInterval = uint32(opt.MaxSessionExpirySeconds)
 	svr := mqtt.New(&mqtt.Options{
 		InlineClient:             opt.InsideJob,
 		ClientNetWriteBufferSize: 1024 * size,
 		ClientNetReadBufferSize:  1024 * size,
+		Capabilities:             cap,
 	})
 	return &MqttServer{
 		svr: svr,

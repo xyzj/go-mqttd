@@ -14,22 +14,15 @@ LDFLAGS="-s -w -X 'main.gover=${GO_VER}' -X 'main.cover=${MAIN_VER}' -X 'main.co
 #	"loong64" may need c source code
 # Detail: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
 
-release: windows linux arm64
-	@echo "copy files to server..."
-	@scp -p ${DIST_WINDOWS} wlstl:/home/shares/archiving/v5release/luwakInstall/micro-services/bin/stmq.exe
-	@scp -p ${DIST_LINUX} wlstl:/home/shares/archiving/v5release/luwak_linux/programs/stmq
-	@scp -p ${DIST_ARM64} wlstl:/home/shares/archiving/v5release/luwak_arm64/bin/stmq-arm64
-	@echo "\nall done."
-
-windows: modtidy
-	@echo "building windows amd64 version..."
-	@GOARCH=amd64 GOOS=windows CGO_ENABLED=0 go build -o ${DIST_WINDOWS} -ldflags=${LDFLAGS} cmd/main.go
-	@echo "done.\n"
-
 linux: modtidy
 	@echo "building linux amd64 version..."
 	@GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_LINUX} -ldflags=${LDFLAGS} cmd/main.go
 	@upx ${DIST_LINUX}
+	@echo "done.\n"
+
+windows: modtidy
+	@echo "building windows amd64 version..."
+	@GOARCH=amd64 GOOS=windows CGO_ENABLED=0 go build -o ${DIST_WINDOWS} -ldflags=${LDFLAGS} cmd/main.go
 	@echo "done.\n"
 
 arm64: modtidy
@@ -51,3 +44,10 @@ modupdate:
 
 clean:
 	@rm -fv _dist/${BINARY_NAME}*
+
+local: windows linux arm64
+	@echo "copy files to server..."
+	@scp -p ${DIST_WINDOWS} wlstl:/home/shares/archiving/v5release/luwakInstall/micro-services/bin/stmq.exe
+	@scp -p ${DIST_LINUX} wlstl:/home/shares/archiving/v5release/luwak_linux/programs/stmq
+	@scp -p ${DIST_ARM64} wlstl:/home/shares/archiving/v5release/luwak_arm64/bin/stmq-arm64
+	@echo "\nall done."
