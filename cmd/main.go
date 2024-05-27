@@ -76,6 +76,9 @@ func loadConf(configfile string) *svrOpt {
 		Comment: "tls root ca file path",
 	}).String()
 	o.bufSize = conf.GetItem("buffer_size").TryInt()
+	if o.bufSize < 8192 {
+		o.bufSize = 8192
+	}
 	o.conf = conf
 	// save config
 	conf.ToFile()

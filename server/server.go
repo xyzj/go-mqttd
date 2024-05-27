@@ -46,6 +46,36 @@ type Opt struct {
 	InsideJob bool
 }
 
+func (o *Opt) ensureDefaults() {
+	if o.MaxMsgExpirySeconds == 0 {
+		o.MaxMsgExpirySeconds = 60
+	}
+	if o.MaxSessionExpirySeconds == 0 {
+		o.MaxSessionExpirySeconds = 60 * 60 * 2
+	}
+	if o.ClientsBufferSize < 4096 {
+		o.ClientsBufferSize = 4096
+	}
+	if o.PortMqtt >= 65535 {
+		o.PortMqtt = 0
+	}
+	if o.PortTLS >= 65535 {
+		o.PortTLS = 0
+	}
+	if o.PortWS >= 65535 {
+		o.PortWS = 0
+	}
+	if o.PortWeb >= 65535 {
+		o.PortWeb = 0
+	}
+	if o.DisableAuth {
+		o.AuthConfig = nil
+	}
+	if o.AuthConfig == nil {
+		o.DisableAuth = true
+	}
+}
+
 // MqttServer a new mqtt server
 type MqttServer struct {
 	svr *mqtt.Server
@@ -55,15 +85,7 @@ type MqttServer struct {
 
 // NewServer make a new server
 func NewServer(opt *Opt) *MqttServer {
-	if opt.MaxSessionExpirySeconds == 0 {
-		opt.MaxSessionExpirySeconds = 60 * 2
-	}
-	if opt.MaxMsgExpirySeconds == 0 {
-		opt.MaxMsgExpirySeconds = 60 * 60 * 2
-	}
-	if opt.ClientsBufferSize < 1024 {
-		opt.ClientsBufferSize = 1024
-	}
+	opt.ensureDefaults()
 	// a new svr
 	cap := mqtt.NewDefaultServerCapabilities()
 	cap.MaximumMessageExpiryInterval = int64(opt.MaxMsgExpirySeconds)
@@ -130,7 +152,7 @@ func (m *MqttServer) Start() error {
 		}
 	}
 	// mqtt tls service
-	if m.opt.PortTLS > 0 && m.opt.PortTLS < 65535 {
+	if m.opt.PortTLS > 0 {
 		err = m.svr.AddListener(listeners.NewTCP(listeners.Config{
 			ID:        "mqtt+tls",
 			Address:   ":" + strconv.Itoa(m.opt.PortTLS),
@@ -142,7 +164,7 @@ func (m *MqttServer) Start() error {
 		}
 	}
 	// mqtt service
-	if m.opt.PortMqtt > 0 && m.opt.PortMqtt < 65535 {
+	if m.opt.PortMqtt > 0 {
 		err = m.svr.AddListener(listeners.NewTCP(listeners.Config{
 			ID:        "mqtt",
 			Address:   ":" + strconv.Itoa(m.opt.PortMqtt),
@@ -154,7 +176,7 @@ func (m *MqttServer) Start() error {
 		}
 	}
 	// websocket service
-	if m.opt.PortWS > 0 && m.opt.PortWS < 65535 {
+	if m.opt.PortWS > 0 {
 		err = m.svr.AddListener(listeners.NewWebsocket(listeners.Config{
 			ID:        "ws",
 			Address:   ":" + strconv.Itoa(m.opt.PortWS),
@@ -166,7 +188,7 @@ func (m *MqttServer) Start() error {
 		}
 	}
 	// http status service
-	if m.opt.PortWeb > 0 && m.opt.PortWeb < 65535 {
+	if m.opt.PortWeb > 0 {
 		userMap := make(map[string]string)
 		for _, v := range m.opt.AuthConfig.Auth {
 			userMap[string(v.Username)] = string(v.Password)
