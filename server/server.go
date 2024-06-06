@@ -68,11 +68,9 @@ func (o *Opt) ensureDefaults() {
 	if o.PortWeb >= 65535 {
 		o.PortWeb = 0
 	}
-	if o.DisableAuth {
-		o.AuthConfig = nil
-	}
 	if o.AuthConfig == nil {
 		o.DisableAuth = true
+		o.AuthConfig = new(auth.Ledger)
 	}
 }
 
@@ -132,7 +130,7 @@ func (m *MqttServer) Start() error {
 		return fmt.Errorf("use NewServer() to create a new mqtt server")
 	}
 	// set auth
-	if m.opt.DisableAuth || m.opt.AuthConfig == nil {
+	if m.opt.DisableAuth {
 		m.svr.AddHook(&auth.AllowHook{}, nil)
 	} else {
 		m.svr.AddHook(&auth.Hook{}, &auth.Options{
@@ -190,11 +188,13 @@ func (m *MqttServer) Start() error {
 	// http status service
 	if m.opt.PortWeb > 0 {
 		userMap := make(map[string]string)
-		for _, v := range m.opt.AuthConfig.Auth {
-			userMap[string(v.Username)] = string(v.Password)
-		}
-		for _, v := range m.opt.AuthConfig.Users {
-			userMap[string(v.Username)] = string(v.Password)
+		if !m.opt.DisableAuth {
+			for _, v := range m.opt.AuthConfig.Auth {
+				userMap[string(v.Username)] = string(v.Password)
+			}
+			for _, v := range m.opt.AuthConfig.Users {
+				userMap[string(v.Username)] = string(v.Password)
+			}
 		}
 		if m.opt.DisableAuth || len(userMap) == 0 {
 			userMap["whoareyou?"] = "callmeroot."
