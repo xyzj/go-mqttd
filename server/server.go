@@ -48,7 +48,7 @@ type Opt struct {
 
 func (o *Opt) ensureDefaults() {
 	if o.MaxMsgExpirySeconds == 0 {
-		o.MaxMsgExpirySeconds = 60
+		o.MaxMsgExpirySeconds = 60 * 60
 	}
 	if o.MaxSessionExpirySeconds == 0 {
 		o.MaxSessionExpirySeconds = 60 * 60 * 2
