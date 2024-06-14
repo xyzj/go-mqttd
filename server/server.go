@@ -129,17 +129,21 @@ func (m *MqttServer) Start() error {
 	if m == nil || m.svr == nil {
 		return fmt.Errorf("use NewServer() to create a new mqtt server")
 	}
+	var err error
 	// set auth
 	if m.opt.DisableAuth {
-		m.svr.AddHook(&auth.AllowHook{}, nil)
+		err = m.svr.AddHook(&auth.AllowHook{}, nil)
 	} else {
-		m.svr.AddHook(&auth.Hook{}, &auth.Options{
+		err = m.svr.AddHook(&auth.Hook{}, &auth.Options{
 			Ledger: m.opt.AuthConfig,
 		})
 	}
+	if err != nil {
+		m.svr.Log.Error("config auth error: " + err.Error())
+		return err
+	}
 	// check tls files
 	var tl *tls.Config
-	var err error
 	if m.opt.TLSConfig != nil {
 		tl = m.opt.TLSConfig
 	} else {

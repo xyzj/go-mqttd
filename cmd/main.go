@@ -23,15 +23,16 @@ var (
 )
 
 type svrOpt struct {
-	conf    *config.File
-	mqtt    int    // mqtt port
-	tls     int    // mqtt+tls port
-	web     int    // http status port
-	ws      int    // websocket port
-	bufSize int    // read, write buffer size
-	cert    string // tls cert file path
-	key     string // tls key file path
-	rootca  string
+	conf     *config.File
+	mqtt     int    // mqtt port
+	tls      int    // mqtt+tls port
+	web      int    // http status port
+	ws       int    // websocket port
+	msgtimeo int    // message timeout in seconds
+	bufSize  int    // read, write buffer size
+	cert     string // tls cert file path
+	key      string // tls key file path
+	rootca   string
 }
 
 func loadConf(configfile string) *svrOpt {
@@ -44,7 +45,6 @@ func loadConf(configfile string) *svrOpt {
 		Value:   "1881",
 		Comment: "mqtt+tls port",
 	}).TryInt()
-
 	o.mqtt = conf.GetDefault(&config.Item{
 		Key:     "port_mqtt",
 		Value:   "1883",
@@ -75,6 +75,11 @@ func loadConf(configfile string) *svrOpt {
 		Value:   "",
 		Comment: "tls root ca file path",
 	}).String()
+	o.msgtimeo = conf.GetDefault(&config.Item{
+		Key:     "message_timeout",
+		Value:   "3600",
+		Comment: "message expire time (seconds)",
+	}).TryInt()
 	o.bufSize = conf.GetItem("buffer_size").TryInt()
 	if o.bufSize < 8192 {
 		o.bufSize = 8192
@@ -153,16 +158,17 @@ func main() {
 		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
 	)
 	svr = server.NewServer(&server.Opt{
-		PortTLS:           o.tls,
-		PortWeb:           o.web,
-		PortWS:            o.ws,
-		PortMqtt:          o.mqtt,
-		Cert:              o.cert,
-		Key:               o.key,
-		RootCA:            o.rootca,
-		DisableAuth:       *disableAuth,
-		AuthConfig:        ac,
-		ClientsBufferSize: o.bufSize,
+		PortTLS:             o.tls,
+		PortWeb:             o.web,
+		PortWS:              o.ws,
+		PortMqtt:            o.mqtt,
+		Cert:                o.cert,
+		Key:                 o.key,
+		RootCA:              o.rootca,
+		DisableAuth:         *disableAuth,
+		AuthConfig:          ac,
+		ClientsBufferSize:   o.bufSize,
+		MaxMsgExpirySeconds: o.msgtimeo,
 	})
 	svr.Run()
 }

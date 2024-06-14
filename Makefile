@@ -48,6 +48,6 @@ clean:
 local: windows linux arm64
 	@echo "copy files to server..."
 	@scp -p ${DIST_WINDOWS} wlstl:/home/shares/archiving/v5release/luwakInstall/micro-services/bin/stmq.exe
-	@scp -p ${DIST_LINUX} wlstl:/home/shares/archiving/v5release/luwak_linux/programs/stmq
+	@scp -p ${DIST_LINUX} wlstl:/home/shares/archiving/v5release/luwak_linux/bin/stmq
 	@scp -p ${DIST_ARM64} wlstl:/home/shares/archiving/v5release/luwak_arm64/bin/stmq-arm64
 	@echo "\nall done."
