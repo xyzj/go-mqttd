@@ -42,42 +42,42 @@ func loadConf(configfile string) *svrOpt {
 	o := &svrOpt{}
 	o.tls = conf.GetDefault(&config.Item{
 		Key:     "port_tls",
-		Value:   "1881",
+		Value:   config.NewInt64Value(1881),
 		Comment: "mqtt+tls port",
 	}).TryInt()
 	o.mqtt = conf.GetDefault(&config.Item{
 		Key:     "port_mqtt",
-		Value:   "1883",
+		Value:   config.NewInt64Value(1883),
 		Comment: "mqtt port",
 	}).TryInt()
 	o.web = conf.GetDefault(&config.Item{
 		Key:     "port_web",
-		Value:   "1880",
+		Value:   config.NewInt64Value(1880),
 		Comment: "http status port",
 	}).TryInt()
 	o.ws = conf.GetDefault(&config.Item{
 		Key:     "port_ws",
-		Value:   "",
+		Value:   config.EmptyValue,
 		Comment: "websocket port, default: 1882",
 	}).TryInt()
 	o.cert = conf.GetDefault(&config.Item{
 		Key:     "tls_cert_file",
-		Value:   "cert.ec.pem",
+		Value:   config.NewValue("cert.ec.pem"),
 		Comment: "tls cert file path",
 	}).String()
 	o.key = conf.GetDefault(&config.Item{
 		Key:     "tls_key_file",
-		Value:   "cert-key.ec.pem",
+		Value:   config.NewValue("cert-key.ec.pem"),
 		Comment: "tls key file path",
 	}).String()
 	o.rootca = conf.GetDefault(&config.Item{
 		Key:     "tls_ca_file",
-		Value:   "",
+		Value:   config.EmptyValue,
 		Comment: "tls root ca file path",
 	}).String()
 	o.msgtimeo = conf.GetDefault(&config.Item{
 		Key:     "message_timeout",
-		Value:   "3600",
+		Value:   config.NewInt64Value(3600),
 		Comment: "message expire time (seconds)",
 	}).TryInt()
 	o.bufSize = conf.GetItem("buffer_size").TryInt()

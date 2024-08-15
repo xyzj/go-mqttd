@@ -42,6 +42,9 @@ var (
 
 func FromAuthfile(authfile string) (*auth.Ledger, error) {
 	ac := &auth.Ledger{}
+	if authfile == "" {
+		return ac, nil
+	}
 	b, err := os.ReadFile(authfile)
 	if err != nil {
 		return nil, err
