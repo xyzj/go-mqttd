@@ -10,12 +10,14 @@ import (
 	"github.com/xyzj/gopsu/config"
 	"github.com/xyzj/gopsu/crypto"
 	"github.com/xyzj/gopsu/gocmd"
+	"github.com/xyzj/gopsu/json"
 	"github.com/xyzj/gopsu/pathtool"
 )
 
 var (
 	gover       = ""
 	cover       = ""
+	version     = ""
 	confname    = "go-mqttd.conf"
 	confile     = flag.String("config", "", "config file path, default is "+confname)
 	authfile    = flag.String("auth", "", "auth file path")
@@ -90,11 +92,22 @@ func loadConf(configfile string) *svrOpt {
 	return o
 }
 
+type ver struct {
+	Core    string `json:"core_ver"`
+	GoVer   string `json:"go_ver"`
+	Version string `json:"version"`
+}
+
 func main() {
 	var svr *server.MqttServer
+	bv, _ := json.MarshalIndent(&ver{
+		Core:    cover,
+		GoVer:   gover,
+		Version: version,
+	}, "", "  ")
 	p := gocmd.DefaultProgram(
 		&gocmd.Info{
-			Ver:      "Core ver: " + cover + "\nGo ver:   " + gover,
+			Ver:      string(bv),
 			Title:    "golang mqtt broker",
 			Descript: "based on mochi-mqtt, support MQTT v3.11 and MQTT v5.0",
 		}).
