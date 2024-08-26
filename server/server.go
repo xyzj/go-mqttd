@@ -51,7 +51,7 @@ func (o *Opt) ensureDefaults() {
 		o.MaxMsgExpirySeconds = 60 * 60
 	}
 	if o.MaxSessionExpirySeconds == 0 {
-		o.MaxSessionExpirySeconds = 60 * 60 * 2
+		o.MaxSessionExpirySeconds = 60 * 6
 	}
 	if o.ClientsBufferSize < 4096 {
 		o.ClientsBufferSize = 4096
