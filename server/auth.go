@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 /*
