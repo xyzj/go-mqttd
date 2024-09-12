@@ -18,7 +18,7 @@ import (
 */
 var (
 	AuthSample = auth.Users{
-		"thisisanACLample": {
+		"thisisanACLsample": {
 			Password: "lostjudgment",
 			Disallow: true,
 			ACL: auth.Filters{
@@ -52,7 +52,7 @@ func FromAuthfile(authfile string) (*auth.Ledger, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &auth.Ledger{Users: ac}, nil
+	return &auth.Ledger{Users: ac, Auth: auth.AuthRules{}, ACL: auth.ACLRules{}}, nil
 }
 
 func InitAuthfile(filename string) error {
