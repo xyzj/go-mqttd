@@ -159,16 +159,20 @@ func main() {
 		*confile = pathtool.JoinPathFromHere(confname)
 	}
 	o := loadConf(*confile)
-	ac, err := server.FromAuthfile(*authfile)
-	if err != nil {
-		println(err.Error())
-		p.Exit(1)
-		return
+	ac := &auth.Ledger{}
+	if *authfile != "" {
+		var err error
+		ac, err = server.FromAuthfile(*authfile)
+		if err != nil {
+			println(err.Error())
+			p.Exit(1)
+			return
+		}
 	}
 	// add two admin accounts
 	ac.Auth = append(ac.Auth,
 		auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
-		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Remote: "127.0.0.1", Allow: true},
+		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Allow: true},
 	)
 	svr = server.NewServer(&server.Opt{
 		PortTLS:             o.tls,
