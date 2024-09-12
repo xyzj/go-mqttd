@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
@@ -16,34 +17,31 @@ import (
 3-ReadWrite               // user can both publish and subscribe to the topic
 */
 var (
-	AuthSample = &auth.Ledger{
-		Users: map[string]auth.UserRule{
-			"mqttdevices": {
-				Username: "mqttdevices",
-				Password: "fallguys",
-				ACL: auth.Filters{
-					"down/#": auth.ReadOnly,
-					"up/#":   auth.WriteOnly,
-				},
+	AuthSample = auth.Users{
+		"thisisanACLample": {
+			Password: "lostjudgment",
+			Disallow: true,
+			ACL: auth.Filters{
+				"deny/#":  auth.Deny,
+				"read/#":  auth.ReadOnly,
+				"write/#": auth.WriteOnly,
+				"rw/#":    auth.ReadWrite,
 			},
-			"lostjudgment": {
-				Username: "lostjudgment",
-				Password: "yagami",
-				ACL: auth.Filters{
-					"deny/#":  auth.Deny,
-					"read/#":  auth.ReadOnly,
-					"write/#": auth.WriteOnly,
-					"rw/#":    auth.ReadWrite,
-				},
+		},
+		"user01": {
+			Password: "fallguys",
+			ACL: auth.Filters{
+				"down/#": auth.ReadOnly,
+				"up/#":   auth.WriteOnly,
 			},
 		},
 	}
 )
 
 func FromAuthfile(authfile string) (*auth.Ledger, error) {
-	ac := &auth.Ledger{}
+	ac := auth.Users{}
 	if authfile == "" {
-		return ac, nil
+		return nil, fmt.Errorf("filename is empty")
 	}
 	b, err := os.ReadFile(authfile)
 	if err != nil {
@@ -54,7 +52,7 @@ func FromAuthfile(authfile string) (*auth.Ledger, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ac, nil
+	return &auth.Ledger{Users: ac}, nil
 }
 
 func InitAuthfile(filename string) error {
