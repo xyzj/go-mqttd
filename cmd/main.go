@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"log/slog"
+	"os"
 
 	"go-mqttd/server"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/xyzj/gopsu/crypto"
 	"github.com/xyzj/gopsu/gocmd"
 	"github.com/xyzj/gopsu/json"
+	"github.com/xyzj/gopsu/logger"
 	"github.com/xyzj/gopsu/pathtool"
 )
 
@@ -21,6 +24,7 @@ var (
 	confname    = "go-mqttd.conf"
 	confile     = flag.String("config", "", "config file path, default is "+confname)
 	authfile    = flag.String("auth", "", "auth file path")
+	logfile     = flag.String("log2file", "", "logfile path")
 	disableAuth = flag.Bool("disable-auth", false, "disable auth check, ignore -auth")
 )
 
@@ -174,7 +178,7 @@ func main() {
 		auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
 		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Allow: true},
 	)
-	svr = server.NewServer(&server.Opt{
+	opt := &server.Opt{
 		PortTLS:             o.tls,
 		PortWeb:             o.web,
 		PortWS:              o.ws,
@@ -186,6 +190,28 @@ func main() {
 		AuthConfig:          ac,
 		ClientsBufferSize:   o.bufSize,
 		MaxMsgExpirySeconds: o.msgtimeo,
-	})
+	}
+	if *logfile != "" {
+		os.MkdirAll(pathtool.JoinPathFromHere("log"), 0o775)
+		opt.FileLogger = slog.New(
+			slog.NewTextHandler(
+				logger.NewWriter(&logger.OptLog{
+					Filename:     *logfile,
+					FileDir:      pathtool.JoinPathFromHere("log"),
+					MaxDays:      30,
+					FileLevel:    logger.LogInfo,
+					CompressFile: true,
+					DelayWrite:   true,
+				}),
+				&slog.HandlerOptions{
+					ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+						if a.Key == "time" {
+							return slog.Attr{}
+						}
+						return a
+					},
+				}))
+	}
+	svr = server.NewServer(opt)
 	svr.Run()
 }

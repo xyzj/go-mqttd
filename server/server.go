@@ -3,6 +3,7 @@ package server
 import (
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"sync/atomic"
 
@@ -20,6 +21,8 @@ type Opt struct {
 	TLSConfig *tls.Config
 	// AuthConfig auth config，when set, ignore Authfile
 	AuthConfig *auth.Ledger
+	// 文件日志写入器
+	FileLogger *slog.Logger
 	// tls cert file path
 	Cert string
 	// tls key file path
@@ -88,12 +91,15 @@ func NewServer(opt *Opt) *MqttServer {
 	cap := mqtt.NewDefaultServerCapabilities()
 	cap.MaximumMessageExpiryInterval = int64(opt.MaxMsgExpirySeconds)
 	cap.MaximumSessionExpiryInterval = uint32(opt.MaxSessionExpirySeconds)
-	svr := mqtt.New(&mqtt.Options{
+	mopt := &mqtt.Options{
 		InlineClient:             opt.InsideJob,
 		ClientNetWriteBufferSize: opt.ClientsBufferSize,
 		ClientNetReadBufferSize:  opt.ClientsBufferSize,
 		Capabilities:             cap,
-	})
+		Logger:                   opt.FileLogger,
+	}
+
+	svr := mqtt.New(mopt)
 	return &MqttServer{
 		svr: svr,
 		opt: opt,
