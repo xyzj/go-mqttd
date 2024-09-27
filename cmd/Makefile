@@ -1,10 +1,10 @@
 BINARY_NAME=go-mqttd
 MAIN_VER=2.6.5
 
-DIST_WINDOWS=_dist/${BINARY_NAME}.exe
-DIST_LINUX=_dist/${BINARY_NAME}
-DIST_ARM64=_dist/${BINARY_NAME}-arm64
-DIST_MIPS64=_dist/${BINARY_NAME}-mips64
+DIST_WINDOWS=../_dist/${BINARY_NAME}.exe
+DIST_LINUX=../_dist/${BINARY_NAME}
+DIST_ARM64=../_dist/${BINARY_NAME}-arm64
+DIST_MIPS64=../_dist/${BINARY_NAME}-mips64
 
 DATE_VER=`date '+%y%m%d.%H%M%S'`
 GO_VER=`go version | cut -d \  -f 3`
@@ -17,23 +17,23 @@ LDFLAGS="-s -w -X 'main.gover=${GO_VER}' -X 'main.cover=${MAIN_VER}' -X 'main.ve
 
 linux: modtidy
 	@echo "building linux amd64 version..."
-	@GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_LINUX} -ldflags=${LDFLAGS} cmd/main.go
+	@GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_LINUX} -ldflags=${LDFLAGS} main.go
 	@upx ${DIST_LINUX}
 	@echo "done.\n"
 
 windows: modtidy
 	@echo "building windows amd64 version..."
-	@GOARCH=amd64 GOOS=windows CGO_ENABLED=0 go build -o ${DIST_WINDOWS} -ldflags=${LDFLAGS} cmd/main.go
+	@GOARCH=amd64 GOOS=windows CGO_ENABLED=0 go build -o ${DIST_WINDOWS} -ldflags=${LDFLAGS} main.go
 	@echo "done.\n"
 
 arm64: modtidy
 	@echo "building linux arm64/aarch64 version..."
-	@GOARCH=arm64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_ARM64} -ldflags=${LDFLAGS} cmd/main.go
+	@GOARCH=arm64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_ARM64} -ldflags=${LDFLAGS} main.go
 	@echo "done.\n"
 
 mips64: modtidy
 	@echo "building linux mips64 version..."
-	@GOARCH=mips64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_MIPS64} -ldflags=${LDFLAGS} cmd/main.go
+	@GOARCH=mips64 GOOS=linux CGO_ENABLED=0 go build -o ${DIST_MIPS64} -ldflags=${LDFLAGS} main.go
 	@echo "done.\n"
 
 modtidy:

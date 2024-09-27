@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"log/slog"
-	"os"
+	"path/filepath"
 
 	"go-mqttd/server"
 
@@ -178,6 +178,14 @@ func main() {
 		auth.AuthRule{Username: "arx7", Password: "arbalest", Allow: true},
 		auth.AuthRule{Username: "YoRHa", Password: "no2typeB", Allow: true},
 	)
+	hopt := &slog.HandlerOptions{
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == "time" {
+				return slog.Attr{}
+			}
+			return a
+		},
+	}
 	opt := &server.Opt{
 		PortTLS:             o.tls,
 		PortWeb:             o.web,
@@ -190,27 +198,23 @@ func main() {
 		AuthConfig:          ac,
 		ClientsBufferSize:   o.bufSize,
 		MaxMsgExpirySeconds: o.msgtimeo,
+		FileLogger: slog.New(slog.NewTextHandler(
+			logger.NewConsoleWriter(),
+			hopt,
+		)),
 	}
 	if *logfile != "" {
-		os.MkdirAll(pathtool.JoinPathFromHere("log"), 0o775)
 		opt.FileLogger = slog.New(
 			slog.NewTextHandler(
 				logger.NewWriter(&logger.OptLog{
-					Filename:     *logfile,
-					FileDir:      pathtool.JoinPathFromHere("log"),
+					Filename:     filepath.Base(*logfile),
+					FileDir:      filepath.Dir(*logfile),
 					MaxDays:      30,
-					FileLevel:    logger.LogInfo,
 					CompressFile: true,
 					DelayWrite:   true,
 				}),
-				&slog.HandlerOptions{
-					ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-						if a.Key == "time" {
-							return slog.Attr{}
-						}
-						return a
-					},
-				}))
+				hopt,
+			))
 	}
 	svr = server.NewServer(opt)
 	svr.Run()
