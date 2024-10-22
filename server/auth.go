@@ -28,11 +28,19 @@ var (
 				"rw/#":    auth.ReadWrite,
 			},
 		},
+		"control": {
+			Password: "dayone",
+			ACL: auth.Filters{
+				"down/#": auth.ReadWrite,
+				"up/#":   auth.ReadWrite,
+			},
+		},
 		"user01": {
 			Password: "fallguys",
 			ACL: auth.Filters{
-				"down/#": auth.ReadOnly,
-				"up/#":   auth.WriteOnly,
+				"down/+/user01/#": auth.ReadOnly,
+				"up/+/user01/#":   auth.WriteOnly,
+				"up/#":            auth.Deny,
 			},
 		},
 	}
