@@ -199,11 +199,15 @@ func (m *MqttServer) Start() error {
 	if m.opt.PortWeb > 0 {
 		userMap := make(map[string]string)
 		if !m.opt.DisableAuth {
-			for _, v := range m.opt.AuthConfig.Auth {
-				userMap[string(v.Username)] = string(v.Password)
+			for name, v := range m.opt.AuthConfig.Users {
+				if name != "" && string(v.Password) != "" {
+					userMap[name] = string(v.Password)
+				}
 			}
-			for _, v := range m.opt.AuthConfig.Users {
-				userMap[string(v.Username)] = string(v.Password)
+			for _, v := range m.opt.AuthConfig.Auth {
+				if string(v.Username) != "" && string(v.Password) != "" {
+					userMap[string(v.Username)] = string(v.Password)
+				}
 			}
 		}
 		if m.opt.DisableAuth || len(userMap) == 0 {

@@ -144,8 +144,10 @@ func main() {
 					ips = append(ips, "127.0.0.1")
 				}
 				if err := c.CreateCert(&crypto.CertOpt{
-					DNS: []string{"localhost"},
-					IP:  ips,
+					DNS:     []string{"localhost"},
+					IP:      ips,
+					RootKey: pathtool.JoinPathFromHere("root-key.ec.pem"),
+					RootCa:  pathtool.JoinPathFromHere("root.ec.pem"),
 				}); err != nil {
 					println(err.Error())
 					return 1
