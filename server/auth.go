@@ -17,33 +17,26 @@ import (
 3-ReadWrite               // user can both publish and subscribe to the topic
 */
 var (
-	AuthSample = auth.Users{
-		"thisisanACLsample": {
-			Password: "lostjudgment",
-			Disallow: true,
-			ACL: auth.Filters{
-				"deny/#":  auth.Deny,
-				"read/#":  auth.ReadOnly,
-				"write/#": auth.WriteOnly,
-				"rw/#":    auth.ReadWrite,
-			},
-		},
-		"control": {
-			Password: "dayone",
-			ACL: auth.Filters{
-				"down/#": auth.ReadWrite,
-				"up/#":   auth.ReadWrite,
-			},
-		},
-		"user01": {
-			Password: "fallguys",
-			ACL: auth.Filters{
-				"down/+/user01/#": auth.ReadOnly,
-				"up/+/user01/#":   auth.WriteOnly,
-				"up/#":            auth.Deny,
-			},
-		},
-	}
+	AuthSample = []byte(`thisisanACLsample:
+    password: lostjudgment
+    acl:
+        deny/#: 0
+        read/#: 1
+        write/#: 2
+        rw/#: 3
+    disallow: true
+control:
+    password: dayone
+    acl:
+        down/#: 3
+        up/#: 3
+user01:
+    password: fallguys
+    acl:
+        down/+/user01/#: 1
+        up/+/user01/#: 2
+        up/#: 0
+`)
 )
 
 func FromAuthfile(authfile string) (*auth.Ledger, error) {
@@ -64,9 +57,9 @@ func FromAuthfile(authfile string) (*auth.Ledger, error) {
 }
 
 func InitAuthfile(filename string) error {
-	b, err := yaml.Marshal(AuthSample)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(filename, b, 0o664)
+	// b, err := yaml.Marshal(AuthSample)
+	// if err != nil {
+	// 	return err
+	// }
+	return os.WriteFile(filename, AuthSample, 0o664)
 }
