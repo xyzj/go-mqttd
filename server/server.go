@@ -210,9 +210,6 @@ func (m *MqttServer) Start() error {
 				}
 			}
 		}
-		if m.opt.DisableAuth || len(userMap) == 0 {
-			userMap["whoareyou?"] = "callmeroot."
-		}
 		err = m.svr.AddListener(listener.NewHTTPStats(&listeners.Config{
 			ID:      "web",
 			Address: ":" + strconv.Itoa(m.opt.PortWeb),
