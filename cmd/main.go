@@ -8,13 +8,13 @@ import (
 	"go-mqttd/server"
 
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
-	"github.com/xyzj/gopsu"
-	"github.com/xyzj/gopsu/config"
-	"github.com/xyzj/gopsu/crypto"
-	"github.com/xyzj/gopsu/gocmd"
-	"github.com/xyzj/gopsu/json"
-	"github.com/xyzj/gopsu/logger"
-	"github.com/xyzj/gopsu/pathtool"
+	"github.com/xyzj/toolbox"
+	"github.com/xyzj/toolbox/config"
+	"github.com/xyzj/toolbox/crypto"
+	"github.com/xyzj/toolbox/gocmd"
+	"github.com/xyzj/toolbox/json"
+	"github.com/xyzj/toolbox/logger"
+	"github.com/xyzj/toolbox/pathtool"
 )
 
 var (
@@ -130,7 +130,7 @@ func main() {
 			Descript: "generate ECC certificate files",
 			RunWithExitCode: func(pi *gocmd.ProcInfo) int {
 				c := crypto.NewECC()
-				ips, _, err := gopsu.GlobalIPs()
+				ips, _, err := toolbox.GlobalIPs()
 				if err != nil {
 					ips = []string{"127.0.0.1"}
 				}

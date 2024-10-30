@@ -18,9 +18,9 @@ import (
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/mochi-mqtt/server/v2/system"
-	"github.com/xyzj/gopsu"
-	"github.com/xyzj/gopsu/json"
-	"github.com/xyzj/gopsu/proc"
+	"github.com/xyzj/toolbox"
+	"github.com/xyzj/toolbox/json"
+	"github.com/xyzj/toolbox/proc"
 )
 
 //go:embed tpl.html
@@ -140,10 +140,10 @@ func (l *HTTPStats) Init(log *slog.Logger) error {
 		DataTimeout: time.Hour * 24 * 7,
 	})
 	mux := http.NewServeMux()
-	mux.HandleFunc("/information", gopsu.HTTPBasicAuth(l.lopt.Auth, l.infoHandler))
-	mux.HandleFunc("/connections", gopsu.HTTPBasicAuth(l.lopt.Auth, l.clientHandler))
-	mux.HandleFunc("/clientsrawdata", gopsu.HTTPBasicAuth(l.lopt.Auth, l.debugHandler))
-	mux.HandleFunc("/processrecords", gopsu.HTTPBasicAuth(l.lopt.Auth, p.HTTPHandler))
+	mux.HandleFunc("/information", toolbox.HTTPBasicAuth(l.lopt.Auth, l.infoHandler))
+	mux.HandleFunc("/connections", toolbox.HTTPBasicAuth(l.lopt.Auth, l.clientHandler))
+	mux.HandleFunc("/clientsrawdata", toolbox.HTTPBasicAuth(l.lopt.Auth, l.debugHandler))
+	mux.HandleFunc("/processrecords", toolbox.HTTPBasicAuth(l.lopt.Auth, p.HTTPHandler))
 	l.listen = &http.Server{
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
@@ -223,7 +223,7 @@ func (l *HTTPStats) clientHandler(w http.ResponseWriter, req *http.Request) {
 	})
 	d := map[string]any{
 		"timer":    time.Now().String(),
-		"uptime":   gopsu.Seconds2String(l.sysInfo.Uptime),
+		"uptime":   toolbox.Seconds2String(l.sysInfo.Uptime),
 		"listener": l.lopt.String(),
 		"counts":   strings.Join(c, "; "),
 		"clients":  sss,
